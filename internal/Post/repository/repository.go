@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"qraphQL_posts/api/graph/model"
 	localstorage "qraphQL_posts/pkg/localStorage"
+	"strconv"
 )
 
 type Repository struct {
@@ -25,20 +26,26 @@ func New(localstorageR *localstorage.Storage) Repository {
 	}
 }
 
-func (r Repository) Create(ctx context.Context, User *model.User) (bool, error) {
-	User.ID = fmt.Sprint(len(r.localstorage.Users) + 1)
-	r.localstorage.Users = append(r.localstorage.Users, *User)
-	return false, nil
+func (r Repository) Create(ctx context.Context, Post *model.Post) (*model.Post, error) {
+	Post.ID = fmt.Sprint(len(r.localstorage.Posts))
+	r.localstorage.Posts = append(r.localstorage.Posts, *Post)
+	return Post, nil
 }
-func (r Repository) Update(ctx context.Context, User *model.User) (bool, error) {
-	return false, nil
+
+func (r Repository) Update(ctx context.Context, Post *model.Post) (bool, error) {
+	idi, err := strconv.Atoi(Post.ID)
+	if err != nil {
+		return false, fmt.Errorf("Error of ID Post")
+	}
+	r.localstorage.Posts[idi].Commentable = *&Post.Commentable
+	return true, nil
 }
-func (r Repository) Get(ctx context.Context, userID int) (*model.User, error) {
-	if userID >= len(r.localstorage.Users) {
+func (r Repository) Get(ctx context.Context, PostId int) (*model.Post, error) {
+	if PostId >= len(r.localstorage.Posts) {
 		return nil, fmt.Errorf("User does not exist")
 	}
-	return &r.localstorage.Users[userID-1], nil
+	return &r.localstorage.Posts[PostId], nil
 }
-func (r Repository) Delete(ctx context.Context, UserId int) (bool, error) {
+func (r Repository) Delete(ctx context.Context, Post int) (bool, error) {
 	return false, nil
 }

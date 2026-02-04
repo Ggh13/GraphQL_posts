@@ -25,10 +25,10 @@ func New(localstorageR *localstorage.Storage) Repository {
 	}
 }
 
-func (r Repository) Create(ctx context.Context, User *model.User) (bool, error) {
-	User.ID = fmt.Sprint(len(r.localstorage.Users) + 1)
+func (r Repository) Create(ctx context.Context, User *model.User) (*model.User, error) {
+	User.ID = fmt.Sprint(len(r.localstorage.Users))
 	r.localstorage.Users = append(r.localstorage.Users, *User)
-	return false, nil
+	return User, nil
 }
 func (r Repository) Update(ctx context.Context, User *model.User) (bool, error) {
 	return false, nil
@@ -37,7 +37,7 @@ func (r Repository) Get(ctx context.Context, userID int) (*model.User, error) {
 	if userID >= len(r.localstorage.Users) {
 		return nil, fmt.Errorf("User does not exist")
 	}
-	return &r.localstorage.Users[userID-1], nil
+	return &r.localstorage.Users[userID], nil
 }
 func (r Repository) Delete(ctx context.Context, UserId int) (bool, error) {
 	return false, nil

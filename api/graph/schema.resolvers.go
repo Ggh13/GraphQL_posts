@@ -23,13 +23,13 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 		ID:      "",
 	}
 
-	_, err := r.userService.Create(ctx, new_user)
+	res, err := r.userService.Create(ctx, new_user)
 	if err != nil {
 		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail create user", zap.Error(err))
 		return nil, err
 	}
 
-	return new_user, nil
+	return res, nil
 }
 
 // CreatePost is the resolver for the createPost field.
@@ -43,8 +43,11 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) 
 		UserID:      input.UserID,
 	}
 	//r.Posts = append(r.Posts, new_post)
-	r.postService.Create(r.ctx, new_post)
-	return new_post, nil
+	res, err := r.postService.Create(r.ctx, new_post)
+	if err != nil {
+		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail create post", zap.Error(err))
+	}
+	return res, nil
 }
 
 // CreateComment is the resolver for the createComment field.
@@ -56,25 +59,51 @@ func (r *mutationResolver) CreateComment(ctx context.Context, input model.NewCom
 		Comments:        nil,
 		UserID:          input.UserID,
 		ParentIDComment: input.ParentIDComment,
+		PostID:          input.PostID,
 	}
-	_, err := r.commentService.Create(r.ctx, new_comment)
+	res, err := r.commentService.Create(r.ctx, new_comment)
 	if err != nil {
 		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail create comment", zap.Error(err))
 		return nil, err
 	}
-	return new_comment, nil
+	return res, nil
 }
 
-// Users is the resolver for the users field.
-func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
-	panic(fmt.Errorf("not implemented: Users - users"))
+// Posts is the resolver for the posts field.
+func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
+	panic(fmt.Errorf("not implemented: Posts - posts"))
+}
+
+// Post is the resolver for the post field.
+func (r *queryResolver) Post(ctx context.Context, id string) (*model.Post, error) {
+	panic(fmt.Errorf("not implemented: Post - post"))
+}
+
+// PostComments is the resolver for the postComments field.
+func (r *queryResolver) PostComments(ctx context.Context, postID string, limit *int32, offset *int32) ([]*model.Comment, error) {
+
+	PostIdi, err := strconv.Atoi(postID)
+	if err != nil {
+		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail with id post", zap.Error(err))
+	}
+
+	res, err := r.commentService.GetAllPost(r.ctx, PostIdi)
+	if err != nil {
+		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail get All comment of the post", zap.Error(err))
+		return nil, err
+	}
+	return res, nil
+}
+
+// CommentReplies is the resolver for the commentReplies field.
+func (r *queryResolver) CommentReplies(ctx context.Context, commentID string, limit *int32, offset *int32) ([]*model.Comment, error) {
+	panic(fmt.Errorf("not implemented: CommentReplies - commentReplies"))
 }
 
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error) {
 	idi, err := strconv.Atoi(id)
-	fmt.Print("Check this")
-	fmt.Print(logger.GetLoggerFromCtx(r.ctx))
+
 	if err != nil {
 		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail create user", zap.Error(err))
 	}
@@ -87,6 +116,11 @@ func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error
 		logger.GetLoggerFromCtx(r.ctx).Info(ctx, "Fail create comment", zap.Error(err))
 	}
 	return res, nil
+}
+
+// Users is the resolver for the users field.
+func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
+	panic(fmt.Errorf("not implemented: Users - users"))
 }
 
 // Mutation returns MutationResolver implementation.

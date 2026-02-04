@@ -17,7 +17,7 @@ import (
 
 type Repository interface {
 	Get(ctx context.Context, UserId int) (*model.User, error)
-	Create(ctx context.Context, User *model.User) (bool, error)
+	Create(ctx context.Context, User *model.User) (*model.User, error)
 	Update(ctx context.Context, User *model.User) (bool, error)
 	Delete(ctx context.Context, UserId int) (bool, error)
 }
@@ -30,7 +30,7 @@ func New(ctx context.Context, r Repository) Service {
 	return Service{repo: r}
 }
 
-func (s Service) Create(ctx context.Context, User *model.User) (bool, error) {
+func (s Service) Create(ctx context.Context, User *model.User) (*model.User, error) {
 	fl, err := s.repo.Create(ctx, User)
 	if err != nil {
 		return fl, fmt.Errorf("%s", err)

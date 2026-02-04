@@ -38,6 +38,7 @@ type Comment {
   userId: ID!
   content: String!
   parentIdComment: ID!
+  postId: ID!
   Comments(limit: Int = 1, offset: Int = 0): [Comment]!
 }
 
@@ -45,6 +46,7 @@ input NewComment {
   userId: ID!
   parentIdComment: ID!
   content: String!
+  postId: ID!
 }
 
 type Mutation {

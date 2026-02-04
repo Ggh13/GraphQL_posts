@@ -7,6 +7,7 @@ type Comment struct {
 	UserID          string     `json:"userId"`
 	Content         string     `json:"content"`
 	ParentIDComment string     `json:"parentIdComment"`
+	PostID          string     `json:"postId"`
 	Comments        []*Comment `json:"Comments"`
 }
 
@@ -17,6 +18,7 @@ type NewComment struct {
 	UserID          string `json:"userId"`
 	ParentIDComment string `json:"parentIdComment"`
 	Content         string `json:"content"`
+	PostID          string `json:"postId"`
 }
 
 type NewPost struct {
