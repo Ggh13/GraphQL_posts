@@ -3,17 +3,31 @@
 package model
 
 type Comment struct {
-	ID      string   `json:"id"`
-	UserID  string   `json:"userId"`
-	Content string   `json:"content"`
-	Comment *Comment `json:"Comment,omitempty"`
+	ID              string     `json:"id"`
+	UserID          string     `json:"userId"`
+	Content         string     `json:"content"`
+	ParentIDComment string     `json:"parentIdComment"`
+	Comments        []*Comment `json:"Comments"`
 }
 
-type Comment2 struct {
-	ID      string   `json:"id"`
-	UserID  string   `json:"userId"`
-	Content string   `json:"content"`
-	Comment *Comment `json:"Comment,omitempty"`
+type Mutation struct {
+}
+
+type NewComment struct {
+	UserID          string `json:"userId"`
+	ParentIDComment string `json:"parentIdComment"`
+	Content         string `json:"content"`
+}
+
+type NewPost struct {
+	UserID      string `json:"userId"`
+	Content     string `json:"content"`
+	Commentable bool   `json:"Commentable"`
+}
+
+type NewUser struct {
+	Name    string `json:"name"`
+	Surname string `json:"surname"`
 }
 
 type Post struct {
@@ -21,27 +35,13 @@ type Post struct {
 	UserID      string     `json:"userId"`
 	Content     string     `json:"content"`
 	Commentable bool       `json:"Commentable"`
-	Comments    []*Comment `json:"Comments,omitempty"`
-}
-
-type Post2 struct {
-	ID          string     `json:"id"`
-	UserID      string     `json:"userId"`
-	Content     string     `json:"content"`
-	Commentable bool       `json:"Commentable"`
-	Comments    []*Comment `json:"Comments,omitempty"`
+	Comments    []*Comment `json:"Comments"`
 }
 
 type Query struct {
 }
 
 type User struct {
-	ID      string `json:"id"`
-	Name    string `json:"name"`
-	Surname string `json:"surname"`
-}
-
-type User2 struct {
 	ID      string `json:"id"`
 	Name    string `json:"name"`
 	Surname string `json:"surname"`

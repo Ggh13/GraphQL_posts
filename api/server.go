@@ -1,11 +1,13 @@
-package api
+package router
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
-	graph "qraphQL_posts/api/graph/hg"
+	"qraphQL_posts/api/graph"
+	"qraphQL_posts/pkg/logger"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
@@ -17,13 +19,16 @@ import (
 
 const defaultPort = "8080"
 
-func NewRouter(ctx context.Context) {
+func NewRouter(ctx context.Context, UserService graph.UserService, PostService graph.PostService, CommentService graph.CommentService) {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = defaultPort
 	}
-
-	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{}}))
+	resolver := &graph.Resolver{}
+	fmt.Println("check router")
+	fmt.Println(logger.GetLoggerFromCtx(ctx))
+	resolver = resolver.NewResolver(ctx, UserService, PostService, CommentService)
+	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))
 
 	srv.AddTransport(transport.Options{})
 	srv.AddTransport(transport.GET{})
