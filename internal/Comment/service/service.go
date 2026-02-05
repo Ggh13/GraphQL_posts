@@ -6,6 +6,7 @@ import (
 	"qraphQL_posts/api/graph"
 	"qraphQL_posts/api/graph/model"
 	"strconv"
+	"unicode/utf8"
 )
 
 /*
@@ -39,6 +40,9 @@ func (s Service) Create(ctx context.Context, Comment *model.Comment) (*model.Com
 		return nil, fmt.Errorf("Error in id Post")
 	}
 
+	if utf8.RuneCountInString(Comment.Content) > 2000 {
+		return nil, fmt.Errorf("Your comment len %v. Maximum acepted len is 2000", utf8.RuneCountInString(Comment.Content))
+	}
 	PostToComment, err := s.postService.Get(ctx, idiPost)
 
 	if err != nil {

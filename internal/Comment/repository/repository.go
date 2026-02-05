@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"qraphQL_posts/api/graph/model"
 	localstorage "qraphQL_posts/pkg/localStorage"
+	"qraphQL_posts/pkg/logger"
 	"strconv"
 )
 
@@ -56,6 +57,7 @@ func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.
 		queue = queue[:len(queue)-1]
 		if tar.ID == Comment.ParentIDComment {
 			tar.Comments = append(tar.Comments, Comment)
+			logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprintf("Create comment with parent %s and id %v ( count of child parent: %v)", tar.ID, Comment.ID, len(tar.Comments)))
 			return Comment, nil
 		}
 		for _, i := range tar.Comments {
@@ -81,5 +83,6 @@ func (r Repository) GetAllPost(ctx context.Context, PostId int) ([]*model.Commen
 	if PostId >= len(r.localstorage.Posts) || PostId < 0 {
 		return nil, fmt.Errorf("User does not exist")
 	}
+	fmt.Println(r.localstorage.Posts[PostId].Comments)
 	return r.localstorage.Posts[PostId].Comments, nil
 }

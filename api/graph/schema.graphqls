@@ -53,12 +53,13 @@ type Mutation {
   createUser(input: NewUser!): User!
   createPost(input: NewPost!): Post!
   createComment(input: NewComment!): Comment!
+  postUpdate(id: Post!): Post!
 }
 
 type Query {
   posts: [Post]
   post(id: ID!): Post
-
+  
   postComments(postId: ID!, limit: Int = 10, offset: Int = 0): [Comment]!
   
   commentReplies(commentId: ID!, limit: Int = 10, offset: Int = 0): [Comment]!
