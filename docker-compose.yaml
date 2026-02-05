@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: forum-postgres
+    environment:
+      POSTGRES_DB: forumdb
+      POSTGRES_USER: forumuser
+      POSTGRES_PASSWORD: mysecretpassword123
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U forumuser -d forumdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .  
+      dockerfile: /docker/Dockerfile  
+    container_name: forum-backend
+    ports:
+      - "8081:8080"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: forumdb
+      DB_USER: forumuser
+      DB_PASSWORD: mysecretpassword123
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

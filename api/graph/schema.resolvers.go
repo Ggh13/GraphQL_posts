@@ -76,9 +76,13 @@ func (r *mutationResolver) PostUpdate(ctx context.Context, input model.UpdatePos
 		ID:          input.ID,
 	}
 	//r.Posts = append(r.Posts, new_post)
-	_, err := r.postService.Update(r.ctx, new_post)
+	flag, err := r.postService.Update(r.ctx, new_post)
 	if err != nil {
 		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail update post", zap.Error(err))
+		return nil, err
+	}
+	if !flag {
+		return nil, fmt.Errorf("Error of Update Post")
 	}
 	return new_post, nil
 }
@@ -144,3 +148,13 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+/*
+	type subscriptionResolver struct{ *Resolver }
+*/

@@ -37,6 +37,9 @@ func (r Repository) Update(ctx context.Context, Post *model.Post) (bool, error) 
 	if err != nil {
 		return false, fmt.Errorf("Error of ID Post")
 	}
+	if idi > len(r.localstorage.Posts)-2 {
+		return false, fmt.Errorf("The id post does not exist")
+	}
 	r.localstorage.Posts[idi].Commentable = *&Post.Commentable
 	return true, nil
 }
