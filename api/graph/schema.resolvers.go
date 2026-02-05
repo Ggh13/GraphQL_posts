@@ -69,6 +69,20 @@ func (r *mutationResolver) CreateComment(ctx context.Context, input model.NewCom
 	return res, nil
 }
 
+// PostUpdate is the resolver for the postUpdate field.
+func (r *mutationResolver) PostUpdate(ctx context.Context, input model.UpdatePost) (*model.Post, error) {
+	new_post := &model.Post{
+		Commentable: input.Commentable,
+		ID:          input.ID,
+	}
+	//r.Posts = append(r.Posts, new_post)
+	_, err := r.postService.Update(r.ctx, new_post)
+	if err != nil {
+		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail update post", zap.Error(err))
+	}
+	return new_post, nil
+}
+
 // Posts is the resolver for the posts field.
 func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
 	panic(fmt.Errorf("not implemented: Posts - posts"))
@@ -81,7 +95,6 @@ func (r *queryResolver) Post(ctx context.Context, id string) (*model.Post, error
 
 // PostComments is the resolver for the postComments field.
 func (r *queryResolver) PostComments(ctx context.Context, postID string, limit *int32, offset *int32) ([]*model.Comment, error) {
-
 	PostIdi, err := strconv.Atoi(postID)
 	if err != nil {
 		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail with id post", zap.Error(err))

@@ -33,6 +33,12 @@ input NewPost {
 
 }
 
+input UpdatePost {
+  Id: ID!
+  Commentable: Boolean!
+
+}
+
 type Comment {
   id: ID!
   userId: ID!
@@ -53,7 +59,7 @@ type Mutation {
   createUser(input: NewUser!): User!
   createPost(input: NewPost!): Post!
   createComment(input: NewComment!): Comment!
-  postUpdate(id: Post!): Post!
+  postUpdate(input: UpdatePost!): Post!
 }
 
 type Query {

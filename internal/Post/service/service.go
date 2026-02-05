@@ -37,6 +37,7 @@ func (s Service) Create(ctx context.Context, Post *model.Post) (*model.Post, err
 }
 
 func (s Service) Update(ctx context.Context, Post *model.Post) (bool, error) {
+
 	fl, err := s.repo.Update(ctx, Post)
 	if err != nil {
 		return fl, fmt.Errorf("%s", err)

@@ -43,6 +43,11 @@ type Post struct {
 type Query struct {
 }
 
+type UpdatePost struct {
+	ID          string `json:"Id"`
+	Commentable bool   `json:"Commentable"`
+}
+
 type User struct {
 	ID      string `json:"id"`
 	Name    string `json:"name"`

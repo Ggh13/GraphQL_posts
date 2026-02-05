@@ -60,6 +60,7 @@ type ComplexityRoot struct {
 		CreateComment func(childComplexity int, input model.NewComment) int
 		CreatePost    func(childComplexity int, input model.NewPost) int
 		CreateUser    func(childComplexity int, input model.NewUser) int
+		PostUpdate    func(childComplexity int, input model.UpdatePost) int
 	}
 
 	Post struct {
@@ -90,6 +91,7 @@ type MutationResolver interface {
 	CreateUser(ctx context.Context, input model.NewUser) (*model.User, error)
 	CreatePost(ctx context.Context, input model.NewPost) (*model.Post, error)
 	CreateComment(ctx context.Context, input model.NewComment) (*model.Comment, error)
+	PostUpdate(ctx context.Context, input model.UpdatePost) (*model.Post, error)
 }
 type QueryResolver interface {
 	Posts(ctx context.Context) ([]*model.Post, error)
@@ -194,6 +196,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.CreateUser(childComplexity, args["input"].(model.NewUser)), true
+	case "Mutation.postUpdate":
+		if e.complexity.Mutation.PostUpdate == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_postUpdate_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.PostUpdate(childComplexity, args["input"].(model.UpdatePost)), true
 
 	case "Post.Commentable":
 		if e.complexity.Post.Commentable == nil {
@@ -318,6 +331,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputNewComment,
 		ec.unmarshalInputNewPost,
 		ec.unmarshalInputNewUser,
+		ec.unmarshalInputUpdatePost,
 	)
 	first := true
 
@@ -476,6 +490,17 @@ func (ec *executionContext) field_Mutation_createUser_args(ctx context.Context, 
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNNewUser2qraphQL_postsᚋapiᚋgraphᚋmodelᚐNewUser)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_postUpdate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNUpdatePost2qraphQL_postsᚋapiᚋgraphᚋmodelᚐUpdatePost)
 	if err != nil {
 		return nil, err
 	}
@@ -976,6 +1001,59 @@ func (ec *executionContext) fieldContext_Mutation_createComment(ctx context.Cont
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_createComment_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_postUpdate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_postUpdate,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().PostUpdate(ctx, fc.Args["input"].(model.UpdatePost))
+		},
+		nil,
+		ec.marshalNPost2ᚖqraphQL_postsᚋapiᚋgraphᚋmodelᚐPost,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_postUpdate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Post_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_Post_userId(ctx, field)
+			case "content":
+				return ec.fieldContext_Post_content(ctx, field)
+			case "Commentable":
+				return ec.fieldContext_Post_Commentable(ctx, field)
+			case "Comments":
+				return ec.fieldContext_Post_Comments(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_postUpdate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -3206,6 +3284,40 @@ func (ec *executionContext) unmarshalInputNewUser(ctx context.Context, obj any) 
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUpdatePost(ctx context.Context, obj any) (model.UpdatePost, error) {
+	var it model.UpdatePost
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"Id", "Commentable"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "Id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Id"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "Commentable":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Commentable"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Commentable = data
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -3314,6 +3426,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "createComment":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createComment(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "postUpdate":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_postUpdate(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -4084,6 +4203,11 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNUpdatePost2qraphQL_postsᚋapiᚋgraphᚋmodelᚐUpdatePost(ctx context.Context, v any) (model.UpdatePost, error) {
+	res, err := ec.unmarshalInputUpdatePost(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNUser2qraphQL_postsᚋapiᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {
