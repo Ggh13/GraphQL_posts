@@ -47,10 +47,9 @@ func NewPostgres(ctx context.Context, cfg *Config) (*pgxpool.Pool, error) {
 		
 		CREATE TABLE IF NOT EXISTS posts (
 			id SERIAL PRIMARY KEY,
-			title VARCHAR(255) NOT NULL,
 			content TEXT NOT NULL,
 			author_id INT NOT NULL,
-			comments_disabled BOOLEAN DEFAULT FALSE
+			commentable BOOLEAN DEFAULT TRUE
 		);
 		
 		CREATE TABLE IF NOT EXISTS comments (

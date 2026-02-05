@@ -14,9 +14,11 @@ import (
 	"qraphQL_posts/internal/config"
 
 	post_repository "qraphQL_posts/internal/Post/repository"
+	post_psg_repository "qraphQL_posts/internal/Post/repositoryPsg"
 	post_service "qraphQL_posts/internal/Post/service"
 
 	comment_repository "qraphQL_posts/internal/Comment/repository"
+	comment_psg_repository "qraphQL_posts/internal/Comment/repositoryPsg"
 	comment_service "qraphQL_posts/internal/Comment/service"
 
 	localstorage "qraphQL_posts/pkg/localStorage"
@@ -57,8 +59,8 @@ func main() {
 		logger.GetLoggerFromCtx(ctx).Info(ctx, "Succesfully connected to pgDB")
 
 		UserRepo = user_psg_repository.New(ctx, pgDB)
-		UserRepo = user_psg_repository.New(ctx, pgDB)
-		UserRepo = user_psg_repository.New(ctx, pgDB)
+		PostRepo = post_psg_repository.New(ctx, pgDB)
+		CommentRepo = comment_psg_repository.New(ctx, pgDB)
 	} else {
 		logger.GetLoggerFromCtx(ctx).Info(ctx, "Type of DB was choosen IN_MEMORY")
 

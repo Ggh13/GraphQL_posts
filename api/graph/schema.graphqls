@@ -68,7 +68,7 @@ type Query {
   
   postComments(postId: Int!, limit: Int = 10, offset: Int = 0): [Comment]!
   
-  commentReplies(commentId: Int!, limit: Int = 10, offset: Int = 0): [Comment]!
+  commentReplies(commentId: Int!, limit: Int = 10, offset: Int = 0): Comment!
   
   # Получить пользователя
   user(id: Int!): User

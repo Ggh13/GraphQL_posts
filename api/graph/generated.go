@@ -97,7 +97,7 @@ type QueryResolver interface {
 	Posts(ctx context.Context) ([]*model.Post, error)
 	Post(ctx context.Context, id int32) (*model.Post, error)
 	PostComments(ctx context.Context, postID int32, limit *int32, offset *int32) ([]*model.Comment, error)
-	CommentReplies(ctx context.Context, commentID int32, limit *int32, offset *int32) ([]*model.Comment, error)
+	CommentReplies(ctx context.Context, commentID int32, limit *int32, offset *int32) (*model.Comment, error)
 	User(ctx context.Context, id int32) (*model.User, error)
 	Users(ctx context.Context) ([]*model.User, error)
 }
@@ -1390,7 +1390,7 @@ func (ec *executionContext) _Query_commentReplies(ctx context.Context, field gra
 			return ec.resolvers.Query().CommentReplies(ctx, fc.Args["commentId"].(int32), fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
 		},
 		nil,
-		ec.marshalNComment2ᚕᚖqraphQL_postsᚋapiᚋgraphᚋmodelᚐComment,
+		ec.marshalNComment2ᚖqraphQL_postsᚋapiᚋgraphᚋmodelᚐComment,
 		true,
 		true,
 	)

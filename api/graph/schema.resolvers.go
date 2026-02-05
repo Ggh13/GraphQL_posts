@@ -109,8 +109,16 @@ func (r *queryResolver) PostComments(ctx context.Context, postID int32, limit *i
 }
 
 // CommentReplies is the resolver for the commentReplies field.
-func (r *queryResolver) CommentReplies(ctx context.Context, commentID int32, limit *int32, offset *int32) ([]*model.Comment, error) {
-	panic(fmt.Errorf("not implemented: CommentReplies - commentReplies"))
+func (r *queryResolver) CommentReplies(ctx context.Context, commentID int32, limit *int32, offset *int32) (*model.Comment, error) {
+
+	if commentID < 1 {
+		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail get comment becouse ID must be >= 1")
+	}
+	res, err := r.commentService.Get(r.ctx, int(commentID))
+	if err != nil {
+		logger.GetLoggerFromCtx(r.ctx).Info(ctx, "Fail get comment", zap.Error(err))
+	}
+	return res, nil
 }
 
 // User is the resolver for the user field.
@@ -118,11 +126,11 @@ func (r *queryResolver) User(ctx context.Context, id int32) (*model.User, error)
 	idi := id
 
 	if idi < 1 {
-		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail create user becouse ID must be >= 1")
+		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail get user becouse ID must be >= 1")
 	}
 	res, err := r.userService.Get(r.ctx, int(idi))
 	if err != nil {
-		logger.GetLoggerFromCtx(r.ctx).Info(ctx, "Fail create comment", zap.Error(err))
+		logger.GetLoggerFromCtx(r.ctx).Info(ctx, "Fail get user", zap.Error(err))
 	}
 	return res, nil
 }

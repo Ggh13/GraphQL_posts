@@ -39,6 +39,7 @@ func (s Service) Create(ctx context.Context, Comment *model.Comment) (*model.Com
 	if utf8.RuneCountInString(Comment.Content) > 2000 {
 		return nil, fmt.Errorf("Your comment len %v. Maximum acepted len is 2000", utf8.RuneCountInString(Comment.Content))
 	}
+
 	PostToComment, err := s.postService.Get(ctx, int(idiPost))
 
 	if err != nil {

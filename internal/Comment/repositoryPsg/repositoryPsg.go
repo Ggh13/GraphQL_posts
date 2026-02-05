@@ -32,7 +32,7 @@ const (
             c.author_id,
             c.content,
             c.parent_id,
-            c.post_id,
+            c.post_id
         FROM comments c
         WHERE c.post_id = (
             SELECT post_id 
@@ -100,18 +100,20 @@ func (r Repository) Get(ctx context.Context, CommentId int) (*model.Comment, err
 	// Fisrt stage. Get ALL comments of this post
 	comments := make(map[int]*model.Comment)
 	for rows.Next() {
-		var comment *model.Comment
-		var temp string
+		var comment model.Comment
+		var temp int
 		err := rows.Scan(
 			&comment.ID,
-			&comment.ParentIDComment,
 			&temp,
 			&comment.Content,
+			&comment.ParentIDComment,
+			&comment.PostID,
 		)
+
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan comment: %w", err)
 		}
-		comments[int(comment.ID)] = comment
+		comments[int(comment.ID)] = &comment
 
 	}
 
