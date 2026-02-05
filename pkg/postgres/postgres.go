@@ -29,11 +29,45 @@ func NewPostgres(ctx context.Context, cfg *Config) (*pgxpool.Pool, error) {
 		cfg.MaxConns,
 		cfg.MinConns,
 	)
+
 	logger.GetLoggerFromCtx(ctx).Info(ctx, connString)
+
 	conn, err := pgxpool.New(ctx, connString)
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to database: %w", err)
 	}
+
+	// Создаем таблицы если их нет
+	createTablesSQL := `
+		CREATE TABLE IF NOT EXISTS users (
+			id SERIAL PRIMARY KEY,
+			name VARCHAR(255) NOT NULL,
+			surname VARCHAR(255) NOT NULL
+		);
+		
+		CREATE TABLE IF NOT EXISTS posts (
+			id SERIAL PRIMARY KEY,
+			title VARCHAR(255) NOT NULL,
+			content TEXT NOT NULL,
+			author_id INT NOT NULL,
+			comments_disabled BOOLEAN DEFAULT FALSE
+		);
+		
+		CREATE TABLE IF NOT EXISTS comments (
+			id SERIAL PRIMARY KEY,
+			post_id INT NOT NULL,
+			parent_id INT,
+			author_id INT NOT NULL,
+			content VARCHAR(2000) NOT NULL
+		);
+	`
+
+	_, err = conn.Exec(ctx, createTablesSQL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create tables: %w", err)
+	}
+
+	logger.GetLoggerFromCtx(ctx).Info(ctx, "Database tables created/verified")
 
 	return conn, nil
 }

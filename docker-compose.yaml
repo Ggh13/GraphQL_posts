@@ -5,11 +5,12 @@ services:
     environment:
       POSTGRES_DB: forumdb
       POSTGRES_USER: forumuser
-      POSTGRES_PASSWORD: mysecretpassword123
+      POSTGRES_PASSWORD: qwerty1234
     ports:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/migrations:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U forumuser -d forumdb"]
       interval: 5s
@@ -28,7 +29,7 @@ services:
       DB_PORT: 5432
       DB_NAME: forumdb
       DB_USER: forumuser
-      DB_PASSWORD: mysecretpassword123
+      DB_PASSWORD: qwerty1234
     depends_on:
       postgres:
         condition: service_healthy

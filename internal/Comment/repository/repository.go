@@ -1,4 +1,4 @@
-package user_repository
+package comment_repository
 
 import (
 	"context"

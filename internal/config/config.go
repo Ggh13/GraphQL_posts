@@ -16,6 +16,7 @@ type Config struct {
 	RestHost    string `env:"REST_HOST" env-default:"REST_HOST" yaml:"REST_HOST"`
 	RestPort    string `env:"REST_PORT" env-default:"REST_PORT" yaml:"REST_PORT"`
 	FrontendURL string `env:"FRONTEND_URL" env-default:"FRONTEND_URL" yaml:"FRONTEND_URL"`
+	TypeDB      string `env:"TYPE_DB" env-default:"TYPE_DB" yaml:"TYPE_DB"`
 }
 
 func NewConfig(ctx context.Context) (*Config, error) {
