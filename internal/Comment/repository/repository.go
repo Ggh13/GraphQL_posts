@@ -6,7 +6,6 @@ import (
 	"qraphQL_posts/api/graph/model"
 	localstorage "qraphQL_posts/pkg/localStorage"
 	"qraphQL_posts/pkg/logger"
-	"strconv"
 )
 
 type Repository struct {
@@ -28,18 +27,12 @@ func New(localstorageR *localstorage.Storage) Repository {
 }
 
 func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.Comment, error) {
-	Comment.ID = fmt.Sprint(len(r.localstorage.Comments))
+	Comment.ID = int32(len(r.localstorage.Comments))
 	r.localstorage.Comments = append(r.localstorage.Comments, *Comment)
 
-	idiPost, err := strconv.Atoi(Comment.PostID)
-	if err != nil {
-		return nil, fmt.Errorf("Error in id Post")
-	}
+	idiPost := Comment.PostID
 
-	idParentComment, err := strconv.Atoi(Comment.ParentIDComment)
-	if err != nil {
-		return nil, fmt.Errorf("Error in id Post")
-	}
+	idParentComment := Comment.ParentIDComment
 
 	if idParentComment < 0 {
 		r.localstorage.Posts[idiPost].Comments = append(r.localstorage.Posts[idiPost].Comments, Comment)

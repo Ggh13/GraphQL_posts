@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"qraphQL_posts/api/graph/model"
+	"strconv"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -32,14 +33,13 @@ const (
             c.content,
             c.parent_id,
             c.post_id,
-            c.created_at
         FROM comments c
         WHERE c.post_id = (
             SELECT post_id 
             FROM comments 
             WHERE id = $1
         )
-        ORDER BY c.created_at
+        ORDER BY c.id
     `
 )
 
@@ -72,7 +72,11 @@ func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.
 	if err != nil {
 		return nil, fmt.Errorf("failed to create comment: %w", err)
 	}
-	Comment.ID = id
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		return nil, fmt.Errorf("Error in Create comment")
+	}
+	Comment.ID = int32(idInt)
 	return Comment, nil
 
 }
@@ -93,6 +97,7 @@ func (r Repository) Get(ctx context.Context, CommentId int) (*model.Comment, err
 	}
 	defer rows.Close()
 
+	// Fisrt stage. Get ALL comments of this post
 	comments := make(map[int]*model.Comment)
 	for rows.Next() {
 		var comment *model.Comment
@@ -106,12 +111,69 @@ func (r Repository) Get(ctx context.Context, CommentId int) (*model.Comment, err
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan comment: %w", err)
 		}
-		comments[comment.ID] = comment
-		comments = append(comments, comment)
+		comments[int(comment.ID)] = comment
+
 	}
 
-	return comments, nil
+	// First ( with half ) stage.
+	for _, j := range comments {
+		comments[int(j.ParentIDComment)].Comments = append(comments[int(j.ParentIDComment)].Comments, j)
+	}
+	return comments[CommentId], nil
+	/*
+		//Second stage. Start write all comments preority
+		var preorityComments []*model.Comment
+		for _, j := range comments {
+			if !CheckMap(j, comments) && (j.ParentIDComment < 1) {
+				preorityComments = append(preorityComments, j)
+				var queue []*model.Comment
+				queue = FindKids(int(j.ID), comments)
+
+				for len(queue) != 0 {
+					tar := queue[len(queue)-1]
+					queue = queue[:len(queue)-1]
+					preorityComments = append(preorityComments, tar)
+
+					parentTar := FindKids(int(tar.ID), comments)
+
+					queue = append(parentTar, queue...)
+				}
+
+			}
+		}
+
+		//Third stage find Target Comment
+		fl := false
+		var res []*model.Comment
+		for _, j := range preorityComments {
+			if fl {
+				if res[len(res)-1].ID != j.ParentIDComment {
+					return res, nil
+				}
+			}
+		}
+		return comments, nil
+	*/
 }
+
+func CheckMap(commentTarget *model.Comment, comments map[int]*model.Comment) bool {
+	for _, j := range comments {
+		if commentTarget == j {
+			return true
+		}
+	}
+	return false
+}
+func FindKids(IdParent int, comments map[int]*model.Comment) []*model.Comment {
+	var res []*model.Comment
+	for _, j := range comments {
+		if j != nil && (IdParent == int(j.ParentIDComment)) {
+			res = append(res, j)
+		}
+	}
+	return res
+}
+
 func (r Repository) Delete(ctx context.Context, Post int) (bool, error) {
 	return false, nil
 }

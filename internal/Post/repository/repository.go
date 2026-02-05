@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"qraphQL_posts/api/graph/model"
 	localstorage "qraphQL_posts/pkg/localStorage"
-	"strconv"
 )
 
 type Repository struct {
@@ -27,17 +26,14 @@ func New(localstorageR *localstorage.Storage) Repository {
 }
 
 func (r Repository) Create(ctx context.Context, Post *model.Post) (*model.Post, error) {
-	Post.ID = fmt.Sprint(len(r.localstorage.Posts))
+	Post.ID = int32(len(r.localstorage.Posts))
 	r.localstorage.Posts = append(r.localstorage.Posts, *Post)
 	return Post, nil
 }
 
 func (r Repository) Update(ctx context.Context, Post *model.Post) (bool, error) {
-	idi, err := strconv.Atoi(Post.ID)
-	if err != nil {
-		return false, fmt.Errorf("Error of ID Post")
-	}
-	if idi > len(r.localstorage.Posts)-2 {
+	idi := Post.ID
+	if idi > int32(len(r.localstorage.Posts)-2) {
 		return false, fmt.Errorf("The id post does not exist")
 	}
 	r.localstorage.Posts[idi].Commentable = *&Post.Commentable

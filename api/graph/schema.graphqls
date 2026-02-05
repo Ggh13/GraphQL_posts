@@ -9,7 +9,7 @@
 # https://gqlgen.com/getting-started/
 
 type User {
-  id: ID!
+  id: Int!
   name: String!
   surname: String!
 }
@@ -19,40 +19,40 @@ input NewUser {
 }
 
 type Post {
-  id: ID!
-  userId: ID!
+  id: Int!
+  userId: Int!
   content: String!
   Commentable: Boolean!
   Comments(limit: Int = 10, offset: Int = 0): [Comment]!
 }
 
 input NewPost {
-  userId: ID!
+  userId: Int!
   content: String!
   Commentable: Boolean!
 
 }
 
 input UpdatePost {
-  Id: ID!
+  Id: Int!
   Commentable: Boolean!
 
 }
 
 type Comment {
-  id: ID!
-  userId: ID!
+  id: Int!
+  userId: Int!
   content: String!
-  parentIdComment: ID!
-  postId: ID!
+  parentIdComment: Int!
+  postId: Int!
   Comments(limit: Int = 1, offset: Int = 0): [Comment]!
 }
 
 input NewComment {
-  userId: ID!
-  parentIdComment: ID!
+  userId: Int!
+  parentIdComment: Int!
   content: String!
-  postId: ID!
+  postId: Int!
 }
 
 type Mutation {
@@ -64,13 +64,13 @@ type Mutation {
 
 type Query {
   posts: [Post]
-  post(id: ID!): Post
+  post(id: Int!): Post
   
-  postComments(postId: ID!, limit: Int = 10, offset: Int = 0): [Comment]!
+  postComments(postId: Int!, limit: Int = 10, offset: Int = 0): [Comment]!
   
-  commentReplies(commentId: ID!, limit: Int = 10, offset: Int = 0): [Comment]!
+  commentReplies(commentId: Int!, limit: Int = 10, offset: Int = 0): [Comment]!
   
   # Получить пользователя
-  user(id: ID!): User
+  user(id: Int!): User
   users: [User]!
 }

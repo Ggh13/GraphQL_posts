@@ -26,7 +26,7 @@ func New(localstorageR *localstorage.Storage) Repository {
 }
 
 func (r Repository) Create(ctx context.Context, User *model.User) (*model.User, error) {
-	User.ID = fmt.Sprint(len(r.localstorage.Users))
+	User.ID = int32(len(r.localstorage.Users))
 	r.localstorage.Users = append(r.localstorage.Users, *User)
 	return User, nil
 }

@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"qraphQL_posts/api/graph/model"
 	"qraphQL_posts/pkg/logger"
-	"strconv"
 
 	"go.uber.org/zap"
 )
@@ -20,7 +19,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 	new_user := &model.User{
 		Name:    input.Name,
 		Surname: input.Surname,
-		ID:      "",
+		ID:      -1,
 	}
 
 	res, err := r.userService.Create(ctx, new_user)
@@ -38,7 +37,7 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) 
 	new_post := &model.Post{
 		Commentable: input.Commentable,
 		Content:     input.Content,
-		ID:          "",
+		ID:          -1,
 		Comments:    comments,
 		UserID:      input.UserID,
 	}
@@ -55,7 +54,7 @@ func (r *mutationResolver) CreateComment(ctx context.Context, input model.NewCom
 	//comments := []*model.Comment{}
 	new_comment := &model.Comment{
 		Content:         input.Content,
-		ID:              "",
+		ID:              -1,
 		Comments:        nil,
 		UserID:          input.UserID,
 		ParentIDComment: input.ParentIDComment,
@@ -93,18 +92,15 @@ func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
 }
 
 // Post is the resolver for the post field.
-func (r *queryResolver) Post(ctx context.Context, id string) (*model.Post, error) {
+func (r *queryResolver) Post(ctx context.Context, id int32) (*model.Post, error) {
 	panic(fmt.Errorf("not implemented: Post - post"))
 }
 
 // PostComments is the resolver for the postComments field.
-func (r *queryResolver) PostComments(ctx context.Context, postID string, limit *int32, offset *int32) ([]*model.Comment, error) {
-	PostIdi, err := strconv.Atoi(postID)
-	if err != nil {
-		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail with id post", zap.Error(err))
-	}
+func (r *queryResolver) PostComments(ctx context.Context, postID int32, limit *int32, offset *int32) ([]*model.Comment, error) {
+	PostIdi := postID
 
-	res, err := r.commentService.GetAllPost(r.ctx, PostIdi)
+	res, err := r.commentService.GetAllPost(r.ctx, int(PostIdi))
 	if err != nil {
 		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail get All comment of the post", zap.Error(err))
 		return nil, err
@@ -113,22 +109,18 @@ func (r *queryResolver) PostComments(ctx context.Context, postID string, limit *
 }
 
 // CommentReplies is the resolver for the commentReplies field.
-func (r *queryResolver) CommentReplies(ctx context.Context, commentID string, limit *int32, offset *int32) ([]*model.Comment, error) {
+func (r *queryResolver) CommentReplies(ctx context.Context, commentID int32, limit *int32, offset *int32) ([]*model.Comment, error) {
 	panic(fmt.Errorf("not implemented: CommentReplies - commentReplies"))
 }
 
 // User is the resolver for the user field.
-func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error) {
-	idi, err := strconv.Atoi(id)
-
-	if err != nil {
-		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail create user", zap.Error(err))
-	}
+func (r *queryResolver) User(ctx context.Context, id int32) (*model.User, error) {
+	idi := id
 
 	if idi < 1 {
 		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail create user becouse ID must be >= 1")
 	}
-	res, err := r.userService.Get(r.ctx, idi)
+	res, err := r.userService.Get(r.ctx, int(idi))
 	if err != nil {
 		logger.GetLoggerFromCtx(r.ctx).Info(ctx, "Fail create comment", zap.Error(err))
 	}
@@ -148,13 +140,3 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-/*
-	type subscriptionResolver struct{ *Resolver }
-*/

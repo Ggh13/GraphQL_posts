@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"qraphQL_posts/api/graph"
 	"qraphQL_posts/api/graph/model"
-	"strconv"
 	"unicode/utf8"
 )
 
@@ -35,15 +34,12 @@ func New(ctx context.Context, r Repository, pS graph.PostService) Service {
 
 func (s Service) Create(ctx context.Context, Comment *model.Comment) (*model.Comment, error) {
 
-	idiPost, err := strconv.Atoi(Comment.PostID)
-	if err != nil {
-		return nil, fmt.Errorf("Error in id Post")
-	}
+	idiPost := Comment.PostID
 
 	if utf8.RuneCountInString(Comment.Content) > 2000 {
 		return nil, fmt.Errorf("Your comment len %v. Maximum acepted len is 2000", utf8.RuneCountInString(Comment.Content))
 	}
-	PostToComment, err := s.postService.Get(ctx, idiPost)
+	PostToComment, err := s.postService.Get(ctx, int(idiPost))
 
 	if err != nil {
 		return nil, fmt.Errorf("There are not post with id %v", idiPost)

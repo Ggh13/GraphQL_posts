@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"qraphQL_posts/api/graph/model"
+	"strconv"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -50,7 +51,11 @@ func (r Repository) Create(ctx context.Context, User *model.User) (*model.User, 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
-	User.ID = id
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+	User.ID = int32(idInt)
 	return User, nil
 }
 func (r Repository) Update(ctx context.Context, User *model.User) (bool, error) {
