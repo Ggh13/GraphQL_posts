@@ -34,12 +34,14 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 // CreatePost is the resolver for the createPost field.
 func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) (*model.Post, error) {
 	comments := []*model.Comment{}
+	user := model.User{}
+	user.ID = input.UserID
 	new_post := &model.Post{
 		Commentable: input.Commentable,
 		Content:     input.Content,
 		ID:          -1,
 		Comments:    comments,
-		UserID:      input.UserID,
+		User:        &user,
 	}
 	//r.Posts = append(r.Posts, new_post)
 	res, err := r.postService.Create(r.ctx, new_post)
@@ -52,11 +54,15 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) 
 // CreateComment is the resolver for the createComment field.
 func (r *mutationResolver) CreateComment(ctx context.Context, input model.NewComment) (*model.Comment, error) {
 	//comments := []*model.Comment{}
+
+	user := model.User{}
+	user.ID = input.UserID
+
 	new_comment := &model.Comment{
 		Content:         input.Content,
 		ID:              -1,
 		Comments:        nil,
-		UserID:          input.UserID,
+		User:            &user,
 		ParentIDComment: input.ParentIDComment,
 		PostID:          input.PostID,
 	}
@@ -93,7 +99,29 @@ func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
 
 // Post is the resolver for the post field.
 func (r *queryResolver) Post(ctx context.Context, id int32) (*model.Post, error) {
-	panic(fmt.Errorf("not implemented: Post - post"))
+	if id < 1 {
+		errorW := "Fail get user becouse ID must be >= 1"
+		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, errorW)
+		return nil, fmt.Errorf(errorW)
+
+	}
+	post, err := r.postService.Get(r.ctx, int(id))
+	if err != nil {
+		logger.GetLoggerFromCtx(r.ctx).Info(ctx, "Fail get user", zap.Error(err))
+		return nil, err
+	}
+
+	logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Get all comment of post")
+	comments, err := r.commentService.GetAllPost(r.ctx, int(post.ID))
+	if err != nil {
+		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail get All comment of the post", zap.Error(err))
+		return nil, err
+	}
+	logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, fmt.Sprintf("%v", len(comments)))
+
+	post.Comments = comments
+
+	return post, nil
 }
 
 // PostComments is the resolver for the postComments field.

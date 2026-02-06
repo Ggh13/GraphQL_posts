@@ -4,7 +4,7 @@ package model
 
 type Comment struct {
 	ID              int32      `json:"id"`
-	UserID          int32      `json:"userId"`
+	User            *User      `json:"user"`
 	Content         string     `json:"content"`
 	ParentIDComment int32      `json:"parentIdComment"`
 	PostID          int32      `json:"postId"`
@@ -34,7 +34,7 @@ type NewUser struct {
 
 type Post struct {
 	ID          int32      `json:"id"`
-	UserID      int32      `json:"userId"`
+	User        *User      `json:"user"`
 	Content     string     `json:"content"`
 	Commentable bool       `json:"Commentable"`
 	Comments    []*Comment `json:"Comments"`

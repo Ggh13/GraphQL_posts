@@ -30,8 +30,8 @@ input NewPost {
   userId: Int!
   content: String!
   Commentable: Boolean!
-
 }
+
 
 input UpdatePost {
   Id: Int!
@@ -61,6 +61,8 @@ type Mutation {
   createComment(input: NewComment!): Comment!
   postUpdate(input: UpdatePost!): Post!
 }
+
+
 
 type Query {
   posts: [Post]

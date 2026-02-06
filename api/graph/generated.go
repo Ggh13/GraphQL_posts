@@ -53,7 +53,7 @@ type ComplexityRoot struct {
 		ID              func(childComplexity int) int
 		ParentIDComment func(childComplexity int) int
 		PostID          func(childComplexity int) int
-		UserID          func(childComplexity int) int
+		User            func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -68,7 +68,7 @@ type ComplexityRoot struct {
 		Comments    func(childComplexity int, limit *int32, offset *int32) int
 		Content     func(childComplexity int) int
 		ID          func(childComplexity int) int
-		UserID      func(childComplexity int) int
+		User        func(childComplexity int) int
 	}
 
 	Query struct {
@@ -156,12 +156,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Comment.PostID(childComplexity), true
-	case "Comment.userId":
-		if e.complexity.Comment.UserID == nil {
+	case "Comment.user":
+		if e.complexity.Comment.User == nil {
 			break
 		}
 
-		return e.complexity.Comment.UserID(childComplexity), true
+		return e.complexity.Comment.User(childComplexity), true
 
 	case "Mutation.createComment":
 		if e.complexity.Mutation.CreateComment == nil {
@@ -237,12 +237,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Post.ID(childComplexity), true
-	case "Post.userId":
-		if e.complexity.Post.UserID == nil {
+	case "Post.user":
+		if e.complexity.Post.User == nil {
 			break
 		}
 
-		return e.complexity.Post.UserID(childComplexity), true
+		return e.complexity.Post.User(childComplexity), true
 
 	case "Query.commentReplies":
 		if e.complexity.Query.CommentReplies == nil {
@@ -680,30 +680,38 @@ func (ec *executionContext) fieldContext_Comment_id(_ context.Context, field gra
 	return fc, nil
 }
 
-func (ec *executionContext) _Comment_userId(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+func (ec *executionContext) _Comment_user(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Comment_userId,
+		ec.fieldContext_Comment_user,
 		func(ctx context.Context) (any, error) {
-			return obj.UserID, nil
+			return obj.User, nil
 		},
 		nil,
-		ec.marshalNInt2int32,
+		ec.marshalNUser2ᚖqraphQL_postsᚋapiᚋgraphᚋmodelᚐUser,
 		true,
 		true,
 	)
 }
 
-func (ec *executionContext) fieldContext_Comment_userId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Comment_user(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Comment",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "name":
+				return ec.fieldContext_User_name(ctx, field)
+			case "surname":
+				return ec.fieldContext_User_surname(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
 	}
 	return fc, nil
@@ -822,8 +830,8 @@ func (ec *executionContext) fieldContext_Comment_Comments(ctx context.Context, f
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Comment_id(ctx, field)
-			case "userId":
-				return ec.fieldContext_Comment_userId(ctx, field)
+			case "user":
+				return ec.fieldContext_Comment_user(ctx, field)
 			case "content":
 				return ec.fieldContext_Comment_content(ctx, field)
 			case "parentIdComment":
@@ -926,8 +934,8 @@ func (ec *executionContext) fieldContext_Mutation_createPost(ctx context.Context
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Post_id(ctx, field)
-			case "userId":
-				return ec.fieldContext_Post_userId(ctx, field)
+			case "user":
+				return ec.fieldContext_Post_user(ctx, field)
 			case "content":
 				return ec.fieldContext_Post_content(ctx, field)
 			case "Commentable":
@@ -979,8 +987,8 @@ func (ec *executionContext) fieldContext_Mutation_createComment(ctx context.Cont
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Comment_id(ctx, field)
-			case "userId":
-				return ec.fieldContext_Comment_userId(ctx, field)
+			case "user":
+				return ec.fieldContext_Comment_user(ctx, field)
 			case "content":
 				return ec.fieldContext_Comment_content(ctx, field)
 			case "parentIdComment":
@@ -1034,8 +1042,8 @@ func (ec *executionContext) fieldContext_Mutation_postUpdate(ctx context.Context
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Post_id(ctx, field)
-			case "userId":
-				return ec.fieldContext_Post_userId(ctx, field)
+			case "user":
+				return ec.fieldContext_Post_user(ctx, field)
 			case "content":
 				return ec.fieldContext_Post_content(ctx, field)
 			case "Commentable":
@@ -1089,30 +1097,38 @@ func (ec *executionContext) fieldContext_Post_id(_ context.Context, field graphq
 	return fc, nil
 }
 
-func (ec *executionContext) _Post_userId(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+func (ec *executionContext) _Post_user(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Post_userId,
+		ec.fieldContext_Post_user,
 		func(ctx context.Context) (any, error) {
-			return obj.UserID, nil
+			return obj.User, nil
 		},
 		nil,
-		ec.marshalNInt2int32,
+		ec.marshalNUser2ᚖqraphQL_postsᚋapiᚋgraphᚋmodelᚐUser,
 		true,
 		true,
 	)
 }
 
-func (ec *executionContext) fieldContext_Post_userId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Post_user(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Post",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "name":
+				return ec.fieldContext_User_name(ctx, field)
+			case "surname":
+				return ec.fieldContext_User_surname(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
 	}
 	return fc, nil
@@ -1202,8 +1218,8 @@ func (ec *executionContext) fieldContext_Post_Comments(ctx context.Context, fiel
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Comment_id(ctx, field)
-			case "userId":
-				return ec.fieldContext_Comment_userId(ctx, field)
+			case "user":
+				return ec.fieldContext_Comment_user(ctx, field)
 			case "content":
 				return ec.fieldContext_Comment_content(ctx, field)
 			case "parentIdComment":
@@ -1256,8 +1272,8 @@ func (ec *executionContext) fieldContext_Query_posts(_ context.Context, field gr
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Post_id(ctx, field)
-			case "userId":
-				return ec.fieldContext_Post_userId(ctx, field)
+			case "user":
+				return ec.fieldContext_Post_user(ctx, field)
 			case "content":
 				return ec.fieldContext_Post_content(ctx, field)
 			case "Commentable":
@@ -1298,8 +1314,8 @@ func (ec *executionContext) fieldContext_Query_post(ctx context.Context, field g
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Post_id(ctx, field)
-			case "userId":
-				return ec.fieldContext_Post_userId(ctx, field)
+			case "user":
+				return ec.fieldContext_Post_user(ctx, field)
 			case "content":
 				return ec.fieldContext_Post_content(ctx, field)
 			case "Commentable":
@@ -1351,8 +1367,8 @@ func (ec *executionContext) fieldContext_Query_postComments(ctx context.Context,
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Comment_id(ctx, field)
-			case "userId":
-				return ec.fieldContext_Comment_userId(ctx, field)
+			case "user":
+				return ec.fieldContext_Comment_user(ctx, field)
 			case "content":
 				return ec.fieldContext_Comment_content(ctx, field)
 			case "parentIdComment":
@@ -1406,8 +1422,8 @@ func (ec *executionContext) fieldContext_Query_commentReplies(ctx context.Contex
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Comment_id(ctx, field)
-			case "userId":
-				return ec.fieldContext_Comment_userId(ctx, field)
+			case "user":
+				return ec.fieldContext_Comment_user(ctx, field)
 			case "content":
 				return ec.fieldContext_Comment_content(ctx, field)
 			case "parentIdComment":
@@ -3342,8 +3358,8 @@ func (ec *executionContext) _Comment(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "userId":
-			out.Values[i] = ec._Comment_userId(ctx, field, obj)
+		case "user":
+			out.Values[i] = ec._Comment_user(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -3476,8 +3492,8 @@ func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "userId":
-			out.Values[i] = ec._Post_userId(ctx, field, obj)
+		case "user":
+			out.Values[i] = ec._Post_user(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

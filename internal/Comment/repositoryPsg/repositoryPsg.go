@@ -83,7 +83,7 @@ func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.
 	err := r.pgDB.QueryRow(ctx, queryCreateComment,
 		Comment.PostID,
 		Comment.ParentIDComment,
-		"-67",
+		Comment.User.ID,
 		Comment.Content,
 	).Scan(&id)
 
@@ -115,6 +115,10 @@ func (r Repository) Get(ctx context.Context, CommentId int) (*model.Comment, err
 	}
 	defer rows.Close()
 
+	if rows == nil {
+		var t *model.Comment
+		return t, nil
+	}
 	// Fisrt stage. Get ALL comments of this post
 	comments := make(map[int]*model.Comment)
 	for rows.Next() {

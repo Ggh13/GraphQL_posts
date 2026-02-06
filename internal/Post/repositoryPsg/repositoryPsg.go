@@ -26,9 +26,16 @@ const (
     `
 
 	queryGetPost = `
-        SELECT id, content, author_id, commentable
-        FROM posts 
-        WHERE id = $1
+        SELECT 
+			p.id,
+			p.content,
+			p.commentable,
+			u.id as id,
+			u.name as name,
+			u.surname as surname
+		FROM posts p
+		LEFT JOIN users u ON p.author_id = u.id
+		WHERE p.id = $1
     `
 )
 
@@ -59,7 +66,7 @@ func (r Repository) Create(ctx context.Context, Post *model.Post) (*model.Post, 
 	var id string
 	err := r.pgDB.QueryRow(ctx, queryCreatePost,
 		Post.Content,
-		Post.UserID,
+		Post.User.ID,
 		Post.Commentable,
 	).Scan(&id)
 
@@ -87,19 +94,34 @@ func (r Repository) Update(ctx context.Context, Post *model.Post) (bool, error) 
 }
 func (r Repository) Get(ctx context.Context, PostId int) (*model.Post, error) {
 	/*
-		if PostId >= len(r.localstorage.Posts) {
-			return nil, fmt.Errorf("User does not exist")
-		}
-		return &r.localstorage.Posts[PostId], nil
+				if PostId >= len(r.localstorage.Posts) {
+					return nil, fmt.Errorf("User does not exist")
+				}
+				return &r.localstorage.Posts[PostId], nil
+				queryGetPost = `
+		        SELECT
+					p.id,
+					p.content,
+					p.commentable,
+					u.id as id,
+					u.name as name,
+					u.surname as surname
+				FROM posts p
+				LEFT JOIN users u ON p.author_id = u.id
+				WHERE p.id = $1
+		    `
 	*/
 	var post model.Post
+	var user model.User
 	err := r.pgDB.QueryRow(ctx, queryGetPost, PostId).Scan(
 		&post.ID,
 		&post.Content,
-		&post.UserID,
 		&post.Commentable,
+		&user.ID,
+		&user.Name,
+		&user.Surname,
 	)
-
+	post.User = &user
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get post by ID %s %w", PostId, err)
 	}
