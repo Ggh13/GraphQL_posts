@@ -91,6 +91,96 @@ mutation CreatePost {
 }
 ```
 
+Запрос на получение Поста с комментариями
+- Request:
+```
+query {
+  post(id: 1) {
+    id
+    content
+    Commentable
+    user {
+      id
+      name
+      surname
+    }
+    Comments(limit: 1) {
+      id
+      content
+      user {
+        id
+        name
+        surname
+      }
+    }
+  }
+}
+```
+-  Response:
+```
+{
+  "data": {
+    "post": {
+      "id": 1,
+      "content": "Растим огурцы использую в качестве удобрения мандариновые шкурки",
+      "Commentable": true,
+      "user": {
+        "id": 1,
+        "name": "212",
+        "surname": "Пе23рвый"
+      },
+      "Comments": [
+        {
+          "id": 1,
+          "content": "Вау способ отличный! Вырастил уже тонную!",
+          "user": {
+            "id": 1,
+            "name": "212",
+            "surname": "Пе23рвый"
+          }
+        },
+        {
+          "id": 2,
+          "content": "Вау способ отличный! Вырастил уже тонную!",
+          "user": {
+            "id": 1,
+            "name": "212",
+            "surname": "Пе23рвый"
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+Запрос на обновления Поста ( изменения возможности комментирования )
+- Request:
+```
+mutation UpdatePost {
+  postUpdate(input: {
+    Commentable: true
+    Id: 1
+  }) {
+    id
+    content
+    Commentable
+  }
+}
+```
+-  Response:
+```
+{
+  "data": {
+    "postUpdate": {
+      "id": 1,
+      "content": "",
+      "Commentable": true
+    }
+  }
+}
+```
+
 
 Запрос на создание Комментария
 - Request:
@@ -123,7 +213,39 @@ mutation {
 }
 ```
 
-
+Запрос на получения Комментария
+- Request:
+```
+query {
+  commentReplies(commentId: 1) {
+    id
+    content
+    parentIdComment
+    postId
+  }
+}
+```
+-  Response:
+```
+{
+  "data": {
+    "commentReplies": [
+      {
+        "id": 1,
+        "content": "Вау способ отличный! Вырастил уже тонную!",
+        "parentIdComment": -1,
+        "postId": 1
+      },
+      {
+        "id": 2,
+        "content": "Вау способ отличный! Вырастил уже тонную!",
+        "parentIdComment": 1,
+        "postId": 1
+      }
+    ]
+  }
+}
+```
 
 Виды запросов:
 Характеристики системы постов:

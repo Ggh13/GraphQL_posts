@@ -51,7 +51,6 @@ func (s Service) Create(ctx context.Context, Comment *model.Comment) (*model.Com
 	if !PostToComment.Commentable {
 		return nil, fmt.Errorf("This post does not accept comments")
 	}
-
 	fl, err := s.repo.Create(ctx, Comment)
 	if err != nil {
 		return nil, fmt.Errorf("%s", err)

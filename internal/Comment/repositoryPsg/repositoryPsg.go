@@ -27,6 +27,12 @@ const (
         RETURNING id
     `
 
+	queryGetCommentByParent = `
+		SELECT 
+			id
+		FROM comments 
+		WHERE id = $1
+`
 	queryGetComment = `
         SELECT 
             c.id,
@@ -45,13 +51,17 @@ const (
 
 	queryGetAllCommentOfPost = `
         SELECT 
-            id,
-            author_id,
-            content,
-            parent_id,
-            post_id
-        FROM comments 
-        WHERE post_id = $1
+			c.id,
+			c.content,
+			c.parent_id,
+			c.post_id,
+			u.id as user_id,
+			u.name as user_name,
+			u.surname as user_surname
+		FROM comments c
+		LEFT JOIN users u ON c.author_id = u.id
+		WHERE c.post_id = $1
+		ORDER BY c.id
     `
 	queryGetIdCommbyPostId = `
         SELECT 
@@ -79,6 +89,18 @@ func New(ctx context.Context, pgDB *pgxpool.Pool) *Repository {
 }
 
 func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.Comment, error) {
+
+	if Comment.ParentIDComment >= 1 {
+		var id_parent string
+		err := r.pgDB.QueryRow(ctx, queryGetCommentByParent,
+			Comment.ParentIDComment,
+		).Scan(&id_parent)
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to create comment. Parent comment must exist: %w", err)
+		}
+	}
+
 	var id string
 	err := r.pgDB.QueryRow(ctx, queryCreateComment,
 		Comment.PostID,
@@ -94,7 +116,9 @@ func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.
 	if err != nil {
 		return nil, fmt.Errorf("Error in Create comment")
 	}
+
 	Comment.ID = int32(idInt)
+
 	return Comment, nil
 
 }
@@ -173,10 +197,24 @@ func (r Repository) Delete(ctx context.Context, Post int) (bool, error) {
 }
 func (r Repository) GetAllPost(ctx context.Context, PostId int) ([]*model.Comment, error) {
 	/*	if PostId >= len(r.localstorage.Posts) || PostId < 0 {
-			return nil, fmt.Errorf("User does not exist")
-		}
-		fmt.Println(r.localstorage.Posts[PostId].Comments)
-		return r.localstorage.Posts[PostId].Comments, nil
+					return nil, fmt.Errorf("User does not exist")
+				}
+				fmt.Println(r.localstorage.Posts[PostId].Comments)
+				return r.localstorage.Posts[PostId].Comments, nil
+				queryGetAllCommentOfPost = `
+		        SELECT
+					c.id,
+					c.content,
+					c.parent_id,
+					c.post_id,
+					u.id as user_id,
+					u.name as user_name,
+					u.surname as user_surname
+				FROM comments c
+				LEFT JOIN users u ON c.author_id = u.id
+				WHERE c.post_id = $1
+				ORDER BY c.id
+		    `
 	*/
 
 	rows, err := r.pgDB.Query(ctx, queryGetAllCommentOfPost, PostId)
@@ -189,14 +227,17 @@ func (r Repository) GetAllPost(ctx context.Context, PostId int) ([]*model.Commen
 	comments := make(map[int]*model.Comment)
 	for rows.Next() {
 		var comment model.Comment
-		var temp int
+		var user model.User
 		err := rows.Scan(
 			&comment.ID,
-			&temp,
 			&comment.Content,
 			&comment.ParentIDComment,
 			&comment.PostID,
+			&user.ID,
+			&user.Name,
+			&user.Surname,
 		)
+		comment.User = &user
 		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprintf("There are com %v ", comment.ID))
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan comment: %w", err)

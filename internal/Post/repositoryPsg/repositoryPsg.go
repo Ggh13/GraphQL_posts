@@ -37,6 +37,12 @@ const (
 		LEFT JOIN users u ON p.author_id = u.id
 		WHERE p.id = $1
     `
+
+	queryUpdatePos = `
+		UPDATE posts 
+		SET commentable = $1 
+		WHERE id = $2
+`
 )
 
 type Repository struct {
@@ -90,7 +96,16 @@ func (r Repository) Update(ctx context.Context, Post *model.Post) (bool, error) 
 		r.localstorage.Posts[idi].Commentable = *&Post.Commentable
 		return true, nil
 	*/
-	return false, nil
+
+	_, err := r.pgDB.Exec(context.Background(), queryUpdatePos,
+		Post.Commentable, Post.ID,
+	)
+
+	if err != nil {
+		return false, fmt.Errorf("Cant update post with id %v %w", Post.ID, err)
+	}
+
+	return true, nil
 }
 func (r Repository) Get(ctx context.Context, PostId int) (*model.Post, error) {
 	/*
