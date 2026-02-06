@@ -19,7 +19,7 @@ type UserService interface {
 
 type CommentService interface {
 	Create(ctx context.Context, Comment *model.Comment) (*model.Comment, error)
-	Get(ctx context.Context, CommentId int) (*model.Comment, error)
+	Get(ctx context.Context, CommentId int) ([]*model.Comment, error)
 	GetAllPost(ctx context.Context, PostId int) ([]*model.Comment, error)
 	//Delete(ctx context.Context, userID int) (bool, error)
 }

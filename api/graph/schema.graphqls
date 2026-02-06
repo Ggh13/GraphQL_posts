@@ -20,7 +20,7 @@ input NewUser {
 
 type Post {
   id: Int!
-  userId: Int!
+  user: User!
   content: String!
   Commentable: Boolean!
   Comments(limit: Int = 10, offset: Int = 0): [Comment]!
@@ -41,7 +41,7 @@ input UpdatePost {
 
 type Comment {
   id: Int!
-  userId: Int!
+  user: User!
   content: String!
   parentIdComment: Int!
   postId: Int!
@@ -68,7 +68,7 @@ type Query {
   
   postComments(postId: Int!, limit: Int = 10, offset: Int = 0): [Comment]!
   
-  commentReplies(commentId: Int!, limit: Int = 10, offset: Int = 0): Comment!
+  commentReplies(commentId: Int!, limit: Int = 10, offset: Int = 0): [Comment]!
   
   # Получить пользователя
   user(id: Int!): User

@@ -99,24 +99,28 @@ func (r *queryResolver) Post(ctx context.Context, id int32) (*model.Post, error)
 // PostComments is the resolver for the postComments field.
 func (r *queryResolver) PostComments(ctx context.Context, postID int32, limit *int32, offset *int32) ([]*model.Comment, error) {
 	PostIdi := postID
-
+	logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Get all comment of post")
 	res, err := r.commentService.GetAllPost(r.ctx, int(PostIdi))
 	if err != nil {
 		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail get All comment of the post", zap.Error(err))
 		return nil, err
 	}
+	logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, fmt.Sprintf("%v", len(res)))
 	return res, nil
 }
 
 // CommentReplies is the resolver for the commentReplies field.
-func (r *queryResolver) CommentReplies(ctx context.Context, commentID int32, limit *int32, offset *int32) (*model.Comment, error) {
-
+func (r *queryResolver) CommentReplies(ctx context.Context, commentID int32, limit *int32, offset *int32) ([]*model.Comment, error) {
 	if commentID < 1 {
-		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail get comment becouse ID must be >= 1")
+		errorW := "Fail get comment becouse ID must be >= 1"
+		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, errorW)
+		return nil, fmt.Errorf(errorW)
 	}
+
 	res, err := r.commentService.Get(r.ctx, int(commentID))
 	if err != nil {
 		logger.GetLoggerFromCtx(r.ctx).Info(ctx, "Fail get comment", zap.Error(err))
+		return nil, err
 	}
 	return res, nil
 }

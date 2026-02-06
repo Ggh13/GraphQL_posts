@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"qraphQL_posts/api/graph/model"
+	"qraphQL_posts/pkg/logger"
 	"strconv"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -40,6 +41,23 @@ const (
             WHERE id = $1
         )
         ORDER BY c.id
+    `
+
+	queryGetAllCommentOfPost = `
+        SELECT 
+            id,
+            author_id,
+            content,
+            parent_id,
+            post_id
+        FROM comments 
+        WHERE post_id = $1
+    `
+	queryGetIdCommbyPostId = `
+        SELECT 
+            post_id
+        FROM comments 
+        WHERE id = $1
     `
 )
 
@@ -119,43 +137,13 @@ func (r Repository) Get(ctx context.Context, CommentId int) (*model.Comment, err
 
 	// First ( with half ) stage.
 	for _, j := range comments {
-		comments[int(j.ParentIDComment)].Comments = append(comments[int(j.ParentIDComment)].Comments, j)
+		if int(j.ParentIDComment) >= 1 {
+			comments[int(j.ParentIDComment)].Comments = append(comments[int(j.ParentIDComment)].Comments, j)
+		}
+
 	}
 	return comments[CommentId], nil
-	/*
-		//Second stage. Start write all comments preority
-		var preorityComments []*model.Comment
-		for _, j := range comments {
-			if !CheckMap(j, comments) && (j.ParentIDComment < 1) {
-				preorityComments = append(preorityComments, j)
-				var queue []*model.Comment
-				queue = FindKids(int(j.ID), comments)
 
-				for len(queue) != 0 {
-					tar := queue[len(queue)-1]
-					queue = queue[:len(queue)-1]
-					preorityComments = append(preorityComments, tar)
-
-					parentTar := FindKids(int(tar.ID), comments)
-
-					queue = append(parentTar, queue...)
-				}
-
-			}
-		}
-
-		//Third stage find Target Comment
-		fl := false
-		var res []*model.Comment
-		for _, j := range preorityComments {
-			if fl {
-				if res[len(res)-1].ID != j.ParentIDComment {
-					return res, nil
-				}
-			}
-		}
-		return comments, nil
-	*/
 }
 
 func CheckMap(commentTarget *model.Comment, comments map[int]*model.Comment) bool {
@@ -186,5 +174,52 @@ func (r Repository) GetAllPost(ctx context.Context, PostId int) ([]*model.Commen
 		fmt.Println(r.localstorage.Posts[PostId].Comments)
 		return r.localstorage.Posts[PostId].Comments, nil
 	*/
-	return nil, nil
+
+	rows, err := r.pgDB.Query(ctx, queryGetAllCommentOfPost, PostId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get comments hierarchy: %w", err)
+	}
+	defer rows.Close()
+
+	// Fisrt stage. Get ALL comments of this post
+	comments := make(map[int]*model.Comment)
+	for rows.Next() {
+		var comment model.Comment
+		var temp int
+		err := rows.Scan(
+			&comment.ID,
+			&temp,
+			&comment.Content,
+			&comment.ParentIDComment,
+			&comment.PostID,
+		)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprintf("There are com %v ", comment.ID))
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan comment: %w", err)
+		}
+		comments[int(comment.ID)] = &comment
+
+	}
+
+	var res []*model.Comment
+
+	for _, j := range comments {
+		res = append(res, j)
+	}
+	logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprintf("There are len  %v ", len(res)))
+	return res, nil
+}
+
+func (r Repository) GetPostId(ctx context.Context, CommentId int) (int, error) {
+
+	var postId int
+	err := r.pgDB.QueryRow(ctx, queryGetIdCommbyPostId, CommentId).Scan(
+		&postId,
+	)
+
+	if err != nil {
+		return -1, fmt.Errorf("Failed to get post by ID comment %s %w", CommentId, err)
+	}
+
+	return postId, nil
 }

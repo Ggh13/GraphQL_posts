@@ -76,6 +76,17 @@ func (r Repository) GetAllPost(ctx context.Context, PostId int) ([]*model.Commen
 	if PostId >= len(r.localstorage.Posts) || PostId < 0 {
 		return nil, fmt.Errorf("User does not exist")
 	}
-	fmt.Println(r.localstorage.Posts[PostId].Comments)
 	return r.localstorage.Posts[PostId].Comments, nil
+}
+
+func (r Repository) GetPostId(ctx context.Context, CommentId int) (int, error) {
+
+	var postId int
+	if CommentId < len(r.localstorage.Comments) {
+		postId = int(r.localstorage.Comments[CommentId].PostID)
+	} else {
+		return -1, fmt.Errorf("Failed to get post by ID comment %s %w", CommentId)
+	}
+
+	return postId, nil
 }
