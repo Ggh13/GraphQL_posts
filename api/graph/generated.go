@@ -73,9 +73,9 @@ type ComplexityRoot struct {
 
 	Query struct {
 		CommentReplies func(childComplexity int, commentID int32, limit *int32, offset *int32) int
-		Post           func(childComplexity int, id int32) int
+		Post           func(childComplexity int, id int32, limit *int32, offset *int32) int
 		PostComments   func(childComplexity int, postID int32, limit *int32, offset *int32) int
-		Posts          func(childComplexity int) int
+		Posts          func(childComplexity int, limit *int32, offset *int32) int
 		User           func(childComplexity int, id int32) int
 		Users          func(childComplexity int) int
 	}
@@ -94,8 +94,8 @@ type MutationResolver interface {
 	PostUpdate(ctx context.Context, input model.UpdatePost) (*model.Post, error)
 }
 type QueryResolver interface {
-	Posts(ctx context.Context) ([]*model.Post, error)
-	Post(ctx context.Context, id int32) (*model.Post, error)
+	Posts(ctx context.Context, limit *int32, offset *int32) ([]*model.Post, error)
+	Post(ctx context.Context, id int32, limit *int32, offset *int32) (*model.Post, error)
 	PostComments(ctx context.Context, postID int32, limit *int32, offset *int32) ([]*model.Comment, error)
 	CommentReplies(ctx context.Context, commentID int32, limit *int32, offset *int32) ([]*model.Comment, error)
 	User(ctx context.Context, id int32) (*model.User, error)
@@ -265,7 +265,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Post(childComplexity, args["id"].(int32)), true
+		return e.complexity.Query.Post(childComplexity, args["id"].(int32), args["limit"].(*int32), args["offset"].(*int32)), true
 	case "Query.postComments":
 		if e.complexity.Query.PostComments == nil {
 			break
@@ -282,7 +282,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			break
 		}
 
-		return e.complexity.Query.Posts(childComplexity), true
+		args, err := ec.field_Query_posts_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Posts(childComplexity, args["limit"].(*int32), args["offset"].(*int32)), true
 	case "Query.user":
 		if e.complexity.Query.User == nil {
 			break
@@ -585,6 +590,32 @@ func (ec *executionContext) field_Query_post_args(ctx context.Context, rawArgs m
 		return nil, err
 	}
 	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_posts_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg1
 	return args, nil
 }
 
@@ -1253,7 +1284,8 @@ func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.Coll
 		field,
 		ec.fieldContext_Query_posts,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Query().Posts(ctx)
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().Posts(ctx, fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
 		},
 		nil,
 		ec.marshalOPost2ᚕᚖqraphQL_postsᚋapiᚋgraphᚋmodelᚐPost,
@@ -1262,7 +1294,7 @@ func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.Coll
 	)
 }
 
-func (ec *executionContext) fieldContext_Query_posts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_posts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -1284,6 +1316,17 @@ func (ec *executionContext) fieldContext_Query_posts(_ context.Context, field gr
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
 	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_posts_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
 	return fc, nil
 }
 
@@ -1295,7 +1338,7 @@ func (ec *executionContext) _Query_post(ctx context.Context, field graphql.Colle
 		ec.fieldContext_Query_post,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Post(ctx, fc.Args["id"].(int32))
+			return ec.resolvers.Query().Post(ctx, fc.Args["id"].(int32), fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
 		},
 		nil,
 		ec.marshalOPost2ᚖqraphQL_postsᚋapiᚋgraphᚋmodelᚐPost,

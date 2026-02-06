@@ -3,6 +3,7 @@ package user_service
 import (
 	"context"
 	"fmt"
+	"qraphQL_posts/api/graph"
 	"qraphQL_posts/api/graph/model"
 )
 
@@ -15,6 +16,7 @@ import (
 
 type Repository interface {
 	Get(ctx context.Context, PostId int) (*model.Post, error)
+	GetAllPosts(ctx context.Context) ([]*model.Post, error)
 	Create(ctx context.Context, Post *model.Post) (*model.Post, error)
 	Update(ctx context.Context, Post *model.Post) (bool, error)
 	Delete(ctx context.Context, PostId int) (bool, error)
@@ -54,5 +56,16 @@ func (s Service) Get(ctx context.Context, postID int) (*model.Post, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%s", err)
 	}
+
 	return res, nil
+}
+
+func (s Service) GetAllPost(ctx context.Context, limit int, offset int) ([]*model.Post, error) {
+	posts, err := s.repo.GetAllPosts(ctx)
+	if err != nil {
+		return nil, fmt.Errorf(" Error. Cant get all post %s", err)
+	}
+	err = graph.CheckLimit(posts, &limit, &offset)
+	return posts[offset : offset+limit], nil
+
 }

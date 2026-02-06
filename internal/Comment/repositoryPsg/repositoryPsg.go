@@ -32,22 +32,28 @@ const (
 			id
 		FROM comments 
 		WHERE id = $1
+		ORDER BY id
 `
+
 	queryGetComment = `
-        SELECT 
-            c.id,
-            c.author_id,
-            c.content,
-            c.parent_id,
-            c.post_id
-        FROM comments c
-        WHERE c.post_id = (
-            SELECT post_id 
-            FROM comments 
-            WHERE id = $1
-        )
-        ORDER BY c.id
-    `
+		SELECT 
+			c.id,
+			c.content,
+			c.parent_id,
+			c.post_id,
+			u.id,
+			u.name,
+			u.surname,
+			u.email
+		FROM comments c
+		LEFT JOIN users u ON c.author_id = u.id
+		WHERE c.post_id = (
+			SELECT post_id 
+			FROM comments 
+			WHERE id = $1
+		)
+		ORDER BY c.id
+`
 
 	queryGetAllCommentOfPost = `
         SELECT 
@@ -55,9 +61,9 @@ const (
 			c.content,
 			c.parent_id,
 			c.post_id,
-			u.id as user_id,
-			u.name as user_name,
-			u.surname as user_surname
+			u.id,
+			u.name,
+			u.surname
 		FROM comments c
 		LEFT JOIN users u ON c.author_id = u.id
 		WHERE c.post_id = $1
@@ -68,7 +74,15 @@ const (
             post_id
         FROM comments 
         WHERE id = $1
+		ORDER BY id
     `
+
+	queryCheckUser = `
+		 SELECT 
+			id
+		FROM users
+		WHERE id = $1
+	`
 )
 
 type Repository struct {
@@ -90,6 +104,15 @@ func New(ctx context.Context, pgDB *pgxpool.Pool) *Repository {
 
 func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.Comment, error) {
 
+	var id_user int
+	id_user = int(Comment.User.ID)
+	err := r.pgDB.QueryRow(ctx, queryCheckUser,
+		&id_user,
+	).Scan(&id_user)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create post, user with this id does not exist: %w", err)
+	}
+
 	if Comment.ParentIDComment >= 1 {
 		var id_parent string
 		err := r.pgDB.QueryRow(ctx, queryGetCommentByParent,
@@ -102,7 +125,7 @@ func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.
 	}
 
 	var id string
-	err := r.pgDB.QueryRow(ctx, queryCreateComment,
+	err = r.pgDB.QueryRow(ctx, queryCreateComment,
 		Comment.PostID,
 		Comment.ParentIDComment,
 		Comment.User.ID,
@@ -135,27 +158,27 @@ func (r Repository) Get(ctx context.Context, CommentId int) (*model.Comment, err
 
 	rows, err := r.pgDB.Query(ctx, queryGetComment, CommentId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get comments hierarchy: %w", err)
+		return nil, fmt.Errorf("failed to get comments %w", err)
 	}
 	defer rows.Close()
 
 	if rows == nil {
-		var t *model.Comment
-		return t, nil
+		return nil, nil
 	}
+
 	// Fisrt stage. Get ALL comments of this post
 	comments := make(map[int]*model.Comment)
 	for rows.Next() {
 		var comment model.Comment
-		var temp int
 		err := rows.Scan(
 			&comment.ID,
-			&temp,
 			&comment.Content,
 			&comment.ParentIDComment,
 			&comment.PostID,
+			&comment.User.ID,
+			&comment.User.Name,
+			&comment.User.Surname,
 		)
-
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan comment: %w", err)
 		}
@@ -172,24 +195,6 @@ func (r Repository) Get(ctx context.Context, CommentId int) (*model.Comment, err
 	}
 	return comments[CommentId], nil
 
-}
-
-func CheckMap(commentTarget *model.Comment, comments map[int]*model.Comment) bool {
-	for _, j := range comments {
-		if commentTarget == j {
-			return true
-		}
-	}
-	return false
-}
-func FindKids(IdParent int, comments map[int]*model.Comment) []*model.Comment {
-	var res []*model.Comment
-	for _, j := range comments {
-		if j != nil && (IdParent == int(j.ParentIDComment)) {
-			res = append(res, j)
-		}
-	}
-	return res
 }
 
 func (r Repository) Delete(ctx context.Context, Post int) (bool, error) {
@@ -224,7 +229,7 @@ func (r Repository) GetAllPost(ctx context.Context, PostId int) ([]*model.Commen
 	defer rows.Close()
 
 	// Fisrt stage. Get ALL comments of this post
-	comments := make(map[int]*model.Comment)
+	var res []*model.Comment
 	for rows.Next() {
 		var comment model.Comment
 		var user model.User
@@ -242,15 +247,10 @@ func (r Repository) GetAllPost(ctx context.Context, PostId int) ([]*model.Commen
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan comment: %w", err)
 		}
-		comments[int(comment.ID)] = &comment
+		res = append(res, &comment)
 
 	}
 
-	var res []*model.Comment
-
-	for _, j := range comments {
-		res = append(res, j)
-	}
 	logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprintf("There are len  %v ", len(res)))
 	return res, nil
 }

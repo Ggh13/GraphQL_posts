@@ -41,7 +41,6 @@ func (s Service) Create(ctx context.Context, Comment *model.Comment) (*model.Com
 	if utf8.RuneCountInString(Comment.Content) > 2000 {
 		return nil, fmt.Errorf("Your comment len %v. Maximum acepted len is 2000", utf8.RuneCountInString(Comment.Content))
 	}
-
 	PostToComment, err := s.postService.Get(ctx, int(idiPost))
 
 	if err != nil {
@@ -59,7 +58,7 @@ func (s Service) Create(ctx context.Context, Comment *model.Comment) (*model.Com
 	return fl, nil
 }
 
-func (s Service) Get(ctx context.Context, CommentID int) ([]*model.Comment, error) {
+func (s Service) Get(ctx context.Context, CommentID int, limit int, offset int) ([]*model.Comment, error) {
 	postId, err := s.repo.GetPostId(ctx, CommentID)
 	if err != nil {
 		return nil, fmt.Errorf("%s", err)
@@ -91,10 +90,14 @@ func (s Service) Get(ctx context.Context, CommentID int) ([]*model.Comment, erro
 
 	}
 
-	return commentbyId, nil
+	err = graph.CheckLimit(commentbyId, &limit, &offset)
+	if err != nil {
+		return nil, err
+	}
+	return commentbyId[offset : offset+limit], nil
 }
 
-func (s Service) GetAllPost(ctx context.Context, PostId int) ([]*model.Comment, error) {
+func (s Service) GetAllPost(ctx context.Context, PostId int, limit int, offset int) ([]*model.Comment, error) {
 	comments, err := s.repo.GetAllPost(ctx, PostId)
 	if err != nil {
 		return nil, fmt.Errorf("%s", err)
@@ -128,7 +131,12 @@ func (s Service) GetAllPost(ctx context.Context, PostId int) ([]*model.Comment, 
 
 	}
 
-	return preorityComments, nil
+	err = graph.CheckLimit(preorityComments, &limit, &offset)
+	if err != nil {
+		return nil, err
+	}
+
+	return preorityComments[offset : offset+limit], nil
 }
 
 func CheckSlice(commentTarget *model.Comment, comments []*model.Comment) bool {

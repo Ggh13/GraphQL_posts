@@ -19,9 +19,8 @@ type UserService interface {
 
 type CommentService interface {
 	Create(ctx context.Context, Comment *model.Comment) (*model.Comment, error)
-	Get(ctx context.Context, CommentId int) ([]*model.Comment, error)
-	GetAllPost(ctx context.Context, PostId int) ([]*model.Comment, error)
-	//Delete(ctx context.Context, userID int) (bool, error)
+	Get(ctx context.Context, CommentId int, limit int, offset int) ([]*model.Comment, error)
+	GetAllPost(ctx context.Context, PostId int, limit int, offset int) ([]*model.Comment, error)
 }
 
 type PostService interface {
@@ -29,6 +28,7 @@ type PostService interface {
 	Update(ctx context.Context, Post *model.Post) (bool, error)
 	Delete(ctx context.Context, postID int) (bool, error)
 	Get(ctx context.Context, postID int) (*model.Post, error)
+	GetAllPost(ctx context.Context, limit int, offset int) ([]*model.Post, error)
 }
 
 type Resolver struct {

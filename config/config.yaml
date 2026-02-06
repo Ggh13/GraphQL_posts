@@ -1,6 +1,6 @@
 REST_PORT: 8080
 REST_HOST: "0.0.0.0"
-TYPE_DB: "PSG" # "IN_MEMORY" for use in memory type of saving and "PSG" for use PostgreSQL
+TYPE_DB: "IN_MEMORY" # "IN_MEMORY" for use in memory type of saving and "PSG" for use PostgreSQL
 
 POSTGRES:
   POSTGRES_HOST: "postgres"

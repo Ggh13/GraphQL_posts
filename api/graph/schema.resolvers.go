@@ -47,6 +47,7 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) 
 	res, err := r.postService.Create(r.ctx, new_post)
 	if err != nil {
 		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail create post", zap.Error(err))
+		return nil, err
 	}
 	return res, nil
 }
@@ -93,12 +94,17 @@ func (r *mutationResolver) PostUpdate(ctx context.Context, input model.UpdatePos
 }
 
 // Posts is the resolver for the posts field.
-func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
-	panic(fmt.Errorf("not implemented: Posts - posts"))
+func (r *queryResolver) Posts(ctx context.Context, limit *int32, offset *int32) ([]*model.Post, error) {
+	posts, err := r.postService.GetAllPost(r.ctx, int(*limit), int(*offset))
+	if err != nil {
+		logger.GetLoggerFromCtx(r.ctx).Info(ctx, "Fail get all posts", zap.Error(err))
+		return nil, err
+	}
+	return posts, nil
 }
 
 // Post is the resolver for the post field.
-func (r *queryResolver) Post(ctx context.Context, id int32) (*model.Post, error) {
+func (r *queryResolver) Post(ctx context.Context, id int32, limit *int32, offset *int32) (*model.Post, error) {
 	if id < 1 {
 		errorW := "Fail get user becouse ID must be >= 1"
 		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, errorW)
@@ -112,7 +118,7 @@ func (r *queryResolver) Post(ctx context.Context, id int32) (*model.Post, error)
 	}
 
 	logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Get all comment of post")
-	comments, err := r.commentService.GetAllPost(r.ctx, int(post.ID))
+	comments, err := r.commentService.GetAllPost(r.ctx, int(post.ID), int(*limit), int(*offset))
 	if err != nil {
 		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail get All comment of the post", zap.Error(err))
 		return nil, err
@@ -128,7 +134,7 @@ func (r *queryResolver) Post(ctx context.Context, id int32) (*model.Post, error)
 func (r *queryResolver) PostComments(ctx context.Context, postID int32, limit *int32, offset *int32) ([]*model.Comment, error) {
 	PostIdi := postID
 	logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Get all comment of post")
-	res, err := r.commentService.GetAllPost(r.ctx, int(PostIdi))
+	res, err := r.commentService.GetAllPost(r.ctx, int(PostIdi), int(*limit), int(*offset))
 	if err != nil {
 		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail get All comment of the post", zap.Error(err))
 		return nil, err
@@ -145,7 +151,7 @@ func (r *queryResolver) CommentReplies(ctx context.Context, commentID int32, lim
 		return nil, fmt.Errorf(errorW)
 	}
 
-	res, err := r.commentService.Get(r.ctx, int(commentID))
+	res, err := r.commentService.Get(r.ctx, int(commentID), int(*limit), int(*offset))
 	if err != nil {
 		logger.GetLoggerFromCtx(r.ctx).Info(ctx, "Fail get comment", zap.Error(err))
 		return nil, err

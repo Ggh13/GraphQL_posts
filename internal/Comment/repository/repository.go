@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"qraphQL_posts/api/graph/model"
 	localstorage "qraphQL_posts/pkg/localStorage"
-	"qraphQL_posts/pkg/logger"
 )
 
 type Repository struct {
@@ -27,7 +26,17 @@ func New(localstorageR *localstorage.Storage) Repository {
 }
 
 func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.Comment, error) {
-	Comment.ID = int32(len(r.localstorage.Comments))
+	Comment.ID = int32(len(r.localstorage.Comments)) + 1
+	Comment.User = &r.localstorage.Users[Comment.User.ID-1]
+
+	if int(Comment.User.ID) > len(r.localstorage.Users) {
+		return nil, fmt.Errorf("User author does not exist")
+	}
+
+	if int(Comment.PostID) > len(r.localstorage.Posts) {
+		return nil, fmt.Errorf("Post with the id does not exist")
+	}
+
 	r.localstorage.Comments = append(r.localstorage.Comments, *Comment)
 
 	idiPost := Comment.PostID
@@ -35,55 +44,38 @@ func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.
 	idParentComment := Comment.ParentIDComment
 
 	if idParentComment < 0 {
-		r.localstorage.Posts[idiPost].Comments = append(r.localstorage.Posts[idiPost].Comments, Comment)
+		r.localstorage.Posts[idiPost-1].Comments = append(r.localstorage.Posts[idiPost-1].Comments, Comment)
 		return Comment, nil
 	}
 
-	Comment_tree := r.localstorage.Posts[idiPost].Comments
-	queue := []*model.Comment{}
-	for _, i := range Comment_tree {
-		queue = append(queue, i)
-	}
+	r.localstorage.Comments[Comment.ParentIDComment-1].Comments = append(r.localstorage.Comments[Comment.ParentIDComment-1].Comments, Comment)
 
-	for len(queue) >= 1 {
-		tar := queue[len(queue)-1]
-		queue = queue[:len(queue)-1]
-		if tar.ID == Comment.ParentIDComment {
-			tar.Comments = append(tar.Comments, Comment)
-			logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprintf("Create comment with parent %s and id %v ( count of child parent: %v)", tar.ID, Comment.ID, len(tar.Comments)))
-			return Comment, nil
-		}
-		for _, i := range tar.Comments {
-			queue = append(queue, i)
-		}
-	}
-
-	return nil, fmt.Errorf("There error with ParentId comment")
+	return Comment, nil
 }
 func (r Repository) Update(ctx context.Context, Comment *model.Comment) (bool, error) {
 	return false, nil
 }
 func (r Repository) Get(ctx context.Context, CommentId int) (*model.Comment, error) {
-	if CommentId >= len(r.localstorage.Comments) {
+	if CommentId > len(r.localstorage.Comments) {
 		return nil, fmt.Errorf("User does not exist")
 	}
-	return &r.localstorage.Comments[CommentId], nil
+	return &r.localstorage.Comments[CommentId-1], nil
 }
 func (r Repository) Delete(ctx context.Context, Post int) (bool, error) {
 	return false, nil
 }
 func (r Repository) GetAllPost(ctx context.Context, PostId int) ([]*model.Comment, error) {
-	if PostId >= len(r.localstorage.Posts) || PostId < 0 {
+	if PostId > len(r.localstorage.Posts) || PostId < 0 {
 		return nil, fmt.Errorf("User does not exist")
 	}
-	return r.localstorage.Posts[PostId].Comments, nil
+	return r.localstorage.Posts[PostId-1].Comments, nil
 }
 
 func (r Repository) GetPostId(ctx context.Context, CommentId int) (int, error) {
 
 	var postId int
 	if CommentId < len(r.localstorage.Comments) {
-		postId = int(r.localstorage.Comments[CommentId].PostID)
+		postId = int(r.localstorage.Comments[CommentId-1].PostID)
 	} else {
 		return -1, fmt.Errorf("Failed to get post by ID comment %s %w", CommentId)
 	}
