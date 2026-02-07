@@ -10,6 +10,7 @@ func CheckLimit[T any](arr []T, limit *int, offset *int) error {
 	if len(arr) == 0 {
 		*limit = 0
 		*offset = 0
+		return nil
 	}
 
 	if *limit > DefaultLimit {

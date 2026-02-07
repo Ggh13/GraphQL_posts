@@ -45,6 +45,7 @@ type Query struct {
 
 type UpdatePost struct {
 	ID          int32 `json:"Id"`
+	UserID      int32 `json:"UserId"`
 	Commentable bool  `json:"Commentable"`
 }
 

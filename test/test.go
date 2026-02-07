@@ -111,6 +111,7 @@ func MainTest(ctx context.Context, resolver graph.Resolver) {
 	UpdPost = model.UpdatePost{
 		ID:          1,
 		Commentable: true,
+		UserID:      1,
 	}
 
 	DonePost = model.Post{

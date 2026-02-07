@@ -74,9 +74,13 @@ func (r *mutationResolver) CreateComment(ctx context.Context, input model.NewCom
 
 // PostUpdate is the resolver for the postUpdate field.
 func (r *mutationResolver) PostUpdate(ctx context.Context, input model.UpdatePost) (*model.Post, error) {
+	user := model.User{}
+	user.ID = input.UserID
+
 	new_post := &model.Post{
 		Commentable: input.Commentable,
 		ID:          input.ID,
+		User:        &user,
 	}
 	flag, err := r.postService.Update(r.ctx, new_post)
 	if err != nil {

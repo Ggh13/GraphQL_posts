@@ -86,7 +86,7 @@ func New(ctx context.Context, pgDB *pgxpool.Pool) *Repository {
 func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.Comment, error) {
 
 	var id_user int
-	id_user = int(Comment.User.ID)
+	id_user = int(Comment.User.ID) // Проверяем существование юзера
 	err := r.pgDB.QueryRow(ctx, queryCheckUser,
 		&id_user,
 	).Scan(&id_user)
@@ -96,7 +96,7 @@ func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.
 		return nil, fmt.Errorf(errorW)
 	}
 
-	if Comment.ParentIDComment >= 1 {
+	if Comment.ParentIDComment >= 1 { // Проверяем указан ли родитель
 		var id_parent string
 		err := r.pgDB.QueryRow(ctx, queryGetCommentByParent,
 			Comment.ParentIDComment,
@@ -152,7 +152,7 @@ func (r Repository) Get(ctx context.Context, CommentId int) (*model.Comment, err
 
 	comments := make(map[int]*model.Comment)
 	for rows.Next() {
-		var comment model.Comment
+		var comment model.Comment // Запрос оптимизированны для N+1 для получения комментария и пользователей
 		err := rows.Scan(
 			&comment.ID,
 			&comment.Content,
@@ -171,8 +171,7 @@ func (r Repository) Get(ctx context.Context, CommentId int) (*model.Comment, err
 
 	}
 
-	// First ( with half ) stage.
-	for _, j := range comments {
+	for _, j := range comments { // Перевод в формат списки
 		if int(j.ParentIDComment) >= 1 {
 			comments[int(j.ParentIDComment)].Comments = append(comments[int(j.ParentIDComment)].Comments, j)
 		}
@@ -194,9 +193,8 @@ func (r Repository) GetAllCommentOfPost(ctx context.Context, PostId int) ([]*mod
 	}
 	defer rows.Close()
 
-	// Fisrt stage. Get ALL comments of this post
 	var res []*model.Comment
-	for rows.Next() {
+	for rows.Next() { // Запрос оптимизированны для N+1 для получения комментария и пользователей
 		var comment model.Comment
 		var user model.User
 		err := rows.Scan(
@@ -231,7 +229,7 @@ func (r Repository) GetPostId(ctx context.Context, CommentId int) (int, error) {
 	)
 
 	if err != nil {
-		errorW := fmt.Sprint("CommentRepository.GetPostId: Failed to get post by ID comment %s %w", CommentId, err)
+		errorW := fmt.Sprint("CommentRepository.GetPostId: Failed to get post by ID comment %d %w", CommentId, err)
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return -1, fmt.Errorf(errorW)
 	}

@@ -22,6 +22,12 @@ const (
 		FROM users
 		WHERE id = $1
 	`
+	queryGetAuthorId = `
+		 SELECT 
+			author_id
+		FROM posts
+		WHERE id = $1
+	`
 	queryGetPost = `
         SELECT 
 			p.id,
@@ -40,7 +46,7 @@ const (
 		UPDATE posts 
 		SET commentable = $1 
 		WHERE id = $2
-`
+	`
 	queryGetAllPosts = `
     SELECT 
         p.id,
@@ -64,7 +70,7 @@ func New(ctx context.Context, pgDB *pgxpool.Pool) *Repository {
 }
 func (r Repository) Create(ctx context.Context, Post *model.Post) (*model.Post, error) {
 	var id_user int
-	id_user = int(Post.User.ID)
+	id_user = int(Post.User.ID) //Проверяем существование user которые создает пост
 	err := r.pgDB.QueryRow(ctx, queryCheckUser,
 		&id_user,
 	).Scan(&id_user)
@@ -74,7 +80,7 @@ func (r Repository) Create(ctx context.Context, Post *model.Post) (*model.Post, 
 	}
 
 	var id string
-	err = r.pgDB.QueryRow(ctx, queryCreatePost,
+	err = r.pgDB.QueryRow(ctx, queryCreatePost, //Создаем пост
 		Post.Content,
 		Post.User.ID,
 		Post.Commentable,
@@ -94,16 +100,24 @@ func (r Repository) Create(ctx context.Context, Post *model.Post) (*model.Post, 
 }
 
 func (r Repository) Update(ctx context.Context, Post *model.Post) (bool, error) {
-	/*
-		idi := Post.ID
-		if idi > int32(len(r.localstorage.Posts)-2) {
-			return false, fmt.Errorf("The id post does not exist")
-		}
-		r.localstorage.Posts[idi].Commentable = *&Post.Commentable
-		return true, nil
-	*/
 
-	_, err := r.pgDB.Exec(context.Background(), queryUpdatePos,
+	var authorId int
+	err := r.pgDB.QueryRow(ctx, queryGetAuthorId, int(Post.ID)).Scan( // Получаем автора поста
+		&authorId,
+	)
+
+	if err != nil {
+		errorW := fmt.Sprint("PostRepository.Update: Failed find post author by ID %d %w", Post.ID, err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return false, fmt.Errorf(errorW)
+	}
+
+	if authorId != int(Post.User.ID) { // проверяем является ли user обновляющий данные автором
+		errorW := fmt.Sprint("PostRepository.Update: You are not author of this post. You can not update it")
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return false, fmt.Errorf(errorW)
+	}
+	_, err = r.pgDB.Exec(context.Background(), queryUpdatePos, // Обновляем ТОЛЬКО право комментирования (по ТЗ)
 		Post.Commentable, Post.ID,
 	)
 
@@ -115,24 +129,6 @@ func (r Repository) Update(ctx context.Context, Post *model.Post) (bool, error) 
 	return true, nil
 }
 func (r Repository) Get(ctx context.Context, PostId int) (*model.Post, error) {
-	/*
-				if PostId >= len(r.localstorage.Posts) {
-					return nil, fmt.Errorf("User does not exist")
-				}
-				return &r.localstorage.Posts[PostId], nil
-				queryGetPost = `
-		        SELECT
-					p.id,
-					p.content,
-					p.commentable,
-					u.id as id,
-					u.name as name,
-					u.surname as surname
-				FROM posts p
-				LEFT JOIN users u ON p.author_id = u.id
-				WHERE p.id = $1
-		    `
-	*/
 	var post model.Post
 	var user model.User
 	err := r.pgDB.QueryRow(ctx, queryGetPost, PostId).Scan(
@@ -156,21 +152,6 @@ func (r Repository) Delete(ctx context.Context, Post int) (bool, error) {
 }
 
 func (r Repository) GetAllPosts(ctx context.Context) ([]*model.Post, error) {
-
-	/*
-			queryGetAllPosts = `
-			SELECT
-				p.id,
-				p.content,
-				p.commentable,
-				u.id,
-				u.name,
-				u.surname
-			FROM posts p
-			LEFT JOIN users u ON p.author_id = u.id
-			ORDER BY p.id
-		`
-	*/
 	rows, err := r.pgDB.Query(ctx, queryGetAllPosts)
 	if err != nil {
 		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostRepository.GetAllPosts: %s", err))
@@ -182,9 +163,8 @@ func (r Repository) GetAllPosts(ctx context.Context) ([]*model.Post, error) {
 		return nil, nil
 	}
 
-	// Fisrt stage. Get ALL comments of this post
 	var posts []*model.Post
-	for rows.Next() {
+	for rows.Next() { // Запрос не позволяющий появится проблеме N+1 за счет JOIN с таблицей user
 		var post model.Post
 		var user model.User
 		err := rows.Scan(
@@ -196,7 +176,8 @@ func (r Repository) GetAllPosts(ctx context.Context) ([]*model.Post, error) {
 			&user.Surname,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan posts: %w", err)
+			logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostRepository.GetAllPosts failed to scan posts: %s", err))
+			return nil, fmt.Errorf("PostRepository.GetAllPosts: failed to scan posts: %w", err)
 		}
 		post.User = &user
 		posts = append(posts, &post)

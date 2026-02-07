@@ -36,6 +36,12 @@ func (r Repository) Update(ctx context.Context, Post *model.Post) (bool, error) 
 		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostRepository.Update: The id post does not exist"))
 		return false, fmt.Errorf("PostRepository.Update: The id post does not exist")
 	}
+
+	if r.localstorage.Posts[idi-1].User.ID != Post.User.ID { // проверка что User является автором поста
+		errorW := fmt.Sprint("PostRepository.Update: You are not author of this post. You can not update it")
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return false, fmt.Errorf(errorW)
+	}
 	r.localstorage.Posts[idi-1].Commentable = *&Post.Commentable
 	return true, nil
 }

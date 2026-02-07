@@ -9,12 +9,6 @@ import (
 	"unicode/utf8"
 )
 
-/*
-	Create(ctx context.Context, Comment *model.Comment) (*model.Comment, error)
-	Get(ctx context.Context, CommentId int) (*model.Comment, error)
-	GetAllPost(ctx context.Context, PostId int) ([]*model.Comment, error)
-*/
-
 type Repository interface {
 	Get(ctx context.Context, CommentId int) (*model.Comment, error)
 	Create(ctx context.Context, Comment *model.Comment) (*model.Comment, error)
@@ -43,8 +37,8 @@ func (s Service) Create(ctx context.Context, Comment *model.Comment) (*model.Com
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 	}
-	PostToComment, err := s.postService.Get(ctx, int(idiPost))
 
+	PostToComment, err := s.postService.Get(ctx, int(idiPost)) // Проверка существования поста с данным ID
 	if err != nil {
 		errorW := fmt.Sprint("CommentService.Create: There are not post with id %v", idiPost)
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
@@ -52,7 +46,7 @@ func (s Service) Create(ctx context.Context, Comment *model.Comment) (*model.Com
 
 	}
 
-	if !PostToComment.Commentable {
+	if !PostToComment.Commentable { // Проверка что данный пост можно комментировать
 		errorW := fmt.Sprint("CommentService.Create: This post does not accept comments")
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
@@ -68,13 +62,14 @@ func (s Service) Create(ctx context.Context, Comment *model.Comment) (*model.Com
 }
 
 func (s Service) Get(ctx context.Context, CommentID int, limit int, offset int) ([]*model.Comment, error) {
-	postId, err := s.repo.GetPostId(ctx, CommentID)
+	//Функция поиска конкретного коментария и всех его дочерних
+	postId, err := s.repo.GetPostId(ctx, CommentID) // Берем id пост чтобы найти ВСЕ его комментарии
 	if err != nil {
 		errorW := fmt.Sprint("CommentService.Get: %s", err)
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 	}
-	comments, err := s.repo.GetAllCommentOfPost(ctx, postId)
+	comments, err := s.repo.GetAllCommentOfPost(ctx, postId) // Находим все комментарии
 	if err != nil {
 		errorW := fmt.Sprint("CommentService.Get: %s", err)
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
@@ -82,14 +77,14 @@ func (s Service) Get(ctx context.Context, CommentID int, limit int, offset int) 
 	}
 
 	var commentbyId []*model.Comment
-	for _, j := range comments {
-		if j.ID == int32(CommentID) {
+	for _, j := range comments { // Перебираем все комментарии
+		if j.ID == int32(CommentID) { // в качестве корня дерева берем наш целевой комментарий
 
 			commentbyId = append(commentbyId, j)
 			var queue []*model.Comment
-			queue = FindKids(int(j.ID), comments)
+			queue = FindKids(int(j.ID), comments) // Ищем всех дочерних комментов
 
-			for len(queue) != 0 {
+			for len(queue) != 0 { // DFS для того чтобы сохранить иерархию коментариев ( BFS не подойдет например )
 				tar := queue[len(queue)-1]
 				queue = queue[:len(queue)-1]
 				commentbyId = append(commentbyId, tar)
@@ -103,7 +98,7 @@ func (s Service) Get(ctx context.Context, CommentID int, limit int, offset int) 
 
 	}
 
-	err = graph.CheckLimit(commentbyId, &limit, &offset)
+	err = graph.CheckLimit(commentbyId, &limit, &offset) //Пигинация
 	if err != nil {
 		errorW := fmt.Sprint("CommentService.Get: %s", err)
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
@@ -113,6 +108,8 @@ func (s Service) Get(ctx context.Context, CommentID int, limit int, offset int) 
 }
 
 func (s Service) GetAllPost(ctx context.Context, PostId int, limit int, offset int) ([]*model.Comment, error) {
+	//Поиск всех комментариев поста
+	// Алгоритм не отличается ничем, за исключением одной строчки
 	comments, err := s.repo.GetAllCommentOfPost(ctx, PostId)
 	if err != nil {
 		errorW := fmt.Sprint("GetAllPost: CommentService.Get: %s", err)
@@ -122,13 +119,13 @@ func (s Service) GetAllPost(ctx context.Context, PostId int, limit int, offset i
 
 	var preorityComments []*model.Comment
 	for _, j := range comments {
-		if !CheckSlice(j, preorityComments) && (j.ParentIDComment < 1) {
-
+		if !CheckSlice(j, preorityComments) && (j.ParentIDComment < 1) { // Здесь в качестве корня берем ВСЕ комметарии у которых нет родителя
+			// А тк у нас в списке комментарии комменты только данного поста, у нас получается несколько деревьев, которые выводим
 			preorityComments = append(preorityComments, j)
 			var queue []*model.Comment
 			queue = FindKids(int(j.ID), comments)
 
-			for len(queue) != 0 {
+			for len(queue) != 0 { //DFS
 				tar := queue[len(queue)-1]
 				queue = queue[:len(queue)-1]
 				preorityComments = append(preorityComments, tar)
@@ -142,7 +139,7 @@ func (s Service) GetAllPost(ctx context.Context, PostId int, limit int, offset i
 
 	}
 
-	err = graph.CheckLimit(preorityComments, &limit, &offset)
+	err = graph.CheckLimit(preorityComments, &limit, &offset) //Пигинация
 	if err != nil {
 		errorW := fmt.Sprint("CommentService.GetAllPost: %s", err)
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
@@ -152,7 +149,7 @@ func (s Service) GetAllPost(ctx context.Context, PostId int, limit int, offset i
 	return preorityComments[offset : offset+limit], nil
 }
 
-func CheckSlice(commentTarget *model.Comment, comments []*model.Comment) bool {
+func CheckSlice(commentTarget *model.Comment, comments []*model.Comment) bool { // Функция для проверки наличия коментария в списке
 	for _, j := range comments {
 		if j != nil && commentTarget == j {
 			return true
@@ -160,7 +157,7 @@ func CheckSlice(commentTarget *model.Comment, comments []*model.Comment) bool {
 	}
 	return false
 }
-func FindKids(IdParent int, comments []*model.Comment) []*model.Comment {
+func FindKids(IdParent int, comments []*model.Comment) []*model.Comment { // Поиск из списка всех дочерних ( прямых потомков ) данного коментария
 	var res []*model.Comment
 	for _, j := range comments {
 		if j != nil && (IdParent == int(j.ParentIDComment)) {

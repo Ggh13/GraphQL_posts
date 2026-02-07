@@ -3152,7 +3152,7 @@ func (ec *executionContext) unmarshalInputUpdatePost(ctx context.Context, obj an
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"Id", "Commentable"}
+	fieldsInOrder := [...]string{"Id", "UserId", "Commentable"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3166,6 +3166,13 @@ func (ec *executionContext) unmarshalInputUpdatePost(ctx context.Context, obj an
 				return it, err
 			}
 			it.ID = data
+		case "UserId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("UserId"))
+			data, err := ec.unmarshalNInt2int32(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UserID = data
 		case "Commentable":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Commentable"))
 			data, err := ec.unmarshalNBoolean2bool(ctx, v)

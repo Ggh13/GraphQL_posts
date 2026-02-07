@@ -35,6 +35,7 @@ input NewPost {
 
 input UpdatePost {
   Id: Int!
+  UserId: Int!
   Commentable: Boolean!
 
 }

@@ -21,23 +21,23 @@ func New(localstorageR *localstorage.Storage) Repository {
 func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.Comment, error) {
 	Comment.ID = int32(len(r.localstorage.Comments)) + 1
 
-	if int(Comment.User.ID) > len(r.localstorage.Users) {
+	if int(Comment.User.ID) > len(r.localstorage.Users) { // Проверяем существование юзера
 		errorW := fmt.Sprint("CommentRepository.Create: User author does not exist")
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 	}
 
-	if int(Comment.PostID) > len(r.localstorage.Posts) {
+	if int(Comment.PostID) > len(r.localstorage.Posts) { // Проверяем существование поста
 		errorW := fmt.Sprint("CommentRepository.Create: Post with the id does not exist")
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 	}
 
-	if Comment.ParentIDComment > 0 {
+	if Comment.ParentIDComment > 0 { // Если указан родитель комментария
 
-		if int(Comment.ParentIDComment) <= len(r.localstorage.Comments) {
+		if int(Comment.ParentIDComment) <= len(r.localstorage.Comments) { // Проверяем его существование
 
-			if Comment.PostID != r.localstorage.Comments[Comment.ParentIDComment-1].PostID {
+			if Comment.PostID != r.localstorage.Comments[Comment.ParentIDComment-1].PostID { //А теперь проверяем что нет ошибки в указании поста куда пишется комментарий
 				errorW := fmt.Sprint("CommentRepository.Create: PostId must be same like parent Comment PostID")
 				logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 				return nil, fmt.Errorf(errorW)
@@ -54,11 +54,12 @@ func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.
 
 	r.localstorage.Comments = append(r.localstorage.Comments, *Comment)
 
-	if Comment.ParentIDComment <= 0 {
+	if Comment.ParentIDComment <= 0 { // Если родитель комментария не указан, то делаем его корневым для данного поста
 		r.localstorage.Posts[Comment.PostID-1].Comments = append(r.localstorage.Posts[Comment.PostID-1].Comments, Comment)
 		return Comment, nil
 	}
 
+	//Если родитель указан, то ищем родителя и добавляем в его дочерние комментарии
 	r.localstorage.Comments[Comment.ParentIDComment-1].Comments = append(r.localstorage.Comments[Comment.ParentIDComment-1].Comments, Comment)
 
 	return Comment, nil
@@ -67,7 +68,7 @@ func (r Repository) Update(ctx context.Context, Comment *model.Comment) (bool, e
 	return false, nil
 }
 func (r Repository) Get(ctx context.Context, CommentId int) (*model.Comment, error) {
-	if CommentId > len(r.localstorage.Comments) {
+	if CommentId > len(r.localstorage.Comments) { // Проверяем существование комментария
 		errorW := fmt.Sprint("CommentRepository.Get: User does not exist")
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
@@ -83,7 +84,7 @@ func (r Repository) GetAllCommentOfPost(ctx context.Context, PostId int) ([]*mod
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 	}
-	var res []*model.Comment
+	var res []*model.Comment // Берем все комментариия соответсвующего поста
 	for _, j := range r.localstorage.Comments {
 		if j.PostID == int32(PostId) {
 			res = append(res, &j)
@@ -95,7 +96,7 @@ func (r Repository) GetAllCommentOfPost(ctx context.Context, PostId int) ([]*mod
 func (r Repository) GetPostId(ctx context.Context, CommentId int) (int, error) {
 
 	var postId int
-	if CommentId >= len(r.localstorage.Comments) {
+	if CommentId >= len(r.localstorage.Comments) { //Проверяем существование комментария
 		postId = int(r.localstorage.Comments[CommentId-1].PostID)
 	} else {
 		errorW := fmt.Sprint("Failed to get post by ID comment %s %w", CommentId)
