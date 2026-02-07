@@ -27,7 +27,6 @@ func New(localstorageR *localstorage.Storage) Repository {
 
 func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.Comment, error) {
 	Comment.ID = int32(len(r.localstorage.Comments)) + 1
-	Comment.User = &r.localstorage.Users[Comment.User.ID-1]
 
 	if int(Comment.User.ID) > len(r.localstorage.Users) {
 		return nil, fmt.Errorf("User author does not exist")
@@ -36,15 +35,25 @@ func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.
 	if int(Comment.PostID) > len(r.localstorage.Posts) {
 		return nil, fmt.Errorf("Post with the id does not exist")
 	}
+	if Comment.ParentIDComment > 0 {
+
+		if int(Comment.ParentIDComment) <= len(r.localstorage.Comments) {
+
+			if Comment.PostID != r.localstorage.Comments[Comment.ParentIDComment-1].PostID {
+				return nil, fmt.Errorf("PostId must be same like parent Comment PostID")
+			}
+
+		} else {
+			return nil, fmt.Errorf("Parent Id ( Parent comment ) must be exist")
+		}
+	}
+
+	Comment.User = &r.localstorage.Users[Comment.User.ID-1]
 
 	r.localstorage.Comments = append(r.localstorage.Comments, *Comment)
 
-	idiPost := Comment.PostID
-
-	idParentComment := Comment.ParentIDComment
-
-	if idParentComment < 0 {
-		r.localstorage.Posts[idiPost-1].Comments = append(r.localstorage.Posts[idiPost-1].Comments, Comment)
+	if Comment.ParentIDComment < 0 {
+		r.localstorage.Posts[Comment.PostID-1].Comments = append(r.localstorage.Posts[Comment.PostID-1].Comments, Comment)
 		return Comment, nil
 	}
 
