@@ -12,7 +12,9 @@ func CheckLimit[T any](arr []T, limit *int, offset *int) error {
 		*offset = 0
 		return nil
 	}
-
+	if *limit == 0 {
+		return fmt.Errorf("Limit can not be 0")
+	}
 	if *limit > DefaultLimit {
 		*limit = DefaultLimit
 	}

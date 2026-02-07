@@ -50,7 +50,7 @@ func (s Service) Delete(ctx context.Context, postID int) (bool, error) {
 func (s Service) Get(ctx context.Context, postID int) (*model.Post, error) {
 	res, err := s.repo.Get(ctx, postID)
 	if err != nil {
-		return nil, fmt.Errorf("PostService.Get: %s", err)
+		return nil, fmt.Errorf("PostService.Get: %w", err)
 	}
 
 	return res, nil
@@ -59,10 +59,13 @@ func (s Service) Get(ctx context.Context, postID int) (*model.Post, error) {
 func (s Service) GetAllPost(ctx context.Context, limit int, offset int) ([]*model.Post, error) {
 	posts, err := s.repo.GetAllPosts(ctx)
 	if err != nil {
-		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostService.GetAllPost: Error. Cant get all post %s", err))
-		return nil, fmt.Errorf("PostService.GetAllPost: Error. Cant get all post %s", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostService.GetAllPost: Error. Cant get all post %2", err))
+		return nil, fmt.Errorf("PostService.GetAllPost: Error. Cant get all post %2", err)
 	}
 	err = graph.CheckLimit(posts, &limit, &offset)
+	if err != nil {
+		return nil, fmt.Errorf("PostService.GetAllPost: %w", err)
+	}
 	return posts[offset : offset+limit], nil
 
 }

@@ -10,7 +10,8 @@
 ### Quick start:
     docker-compose up --build
 Перейдите на http://localhost:8081/ для удобства использования
-
+### Завершить работу:
+    docker-compose down -v
 ## Архитекутра проекта:
 В основе использовался популярный Github репозиторий, описывающий вариант layout проектов на Golang
 `https://github.com/golang-standards/project-layout`
@@ -46,33 +47,9 @@
 ```
 mutation CreateUser {
   createUser(input: {
-    name: "Пантелей",
-    surname: "Филиард"
+    name: "Георгий",
+    surname: "ФамилиюНеПридумал"
   }) {
-    id
-    name
-    surname
-  }
-}
-```
--  Response:
-```
-    {
-  "data": {
-    "createUser": {
-      "id": 1,
-      "name": "Пантелей",
-      "surname": "Филиард"
-    }
-  }
-}
-```
-
-### Запрос на получение пользователя
-- Request:
-```
-query GetUser {
-  user(id: 1) {
     id
     name
     surname
@@ -83,10 +60,34 @@ query GetUser {
 ```
 {
   "data": {
-    "user": {
+    "createUser": {
+      "id": 2,
+      "name": "Георгий",
+      "surname": "ФамилиюНеПридумал"
+    }
+  }
+}
+```
+
+### Запрос на получение пользователя
+- Request:
+```
+query GetUser {
+  GetUser(id: 1) {
+    id
+    name
+    surname
+  }
+}
+```
+-  Response:
+```
+{
+  "data": {
+    "GetUser": {
       "id": 1,
-      "name": "Пантелей",
-      "surname": "Филиард"
+      "name": "Копатыч",
+      "surname": "Пчолыч"
     }
   }
 }
@@ -99,33 +100,9 @@ query GetUser {
 mutation CreatePost {
   createPost(input: {
     userId: 1,
-    content: "Растим огурцы использую в качестве удобрения мандариновые шкурки",
+    content: "Растим картошку вместе с Петром",
     Commentable: true
   }) {
-    id
-    content
-    Commentable
-  }
-}
-```
--  Response:
-```
-{
-  "data": {
-    "createPost": {
-      "id": 3,
-      "content": "Растим огурцы использую в качестве удобрения мандариновые шкурки",
-      "Commentable": true
-    }
-  }
-}
-```
-
-### Запрос на получение Поста с комментариями
-- Request:
-```
-query {
-  post(id: 1) {
     id
     content
     Commentable
@@ -134,9 +111,82 @@ query {
       name
       surname
     }
-    Comments(limit: 1) {
+  }
+}
+```
+-  Response:
+```
+{
+  "data": {
+    "createPost": {
+      "id": 2,
+      "content": "Растим картошку вместе с Петром",
+      "Commentable": true,
+      "user": {
+        "id": 1,
+        "name": "Копатыч",
+        "surname": "Пчолыч"
+      }
+    }
+  }
+}
+```
+
+### Запрос на получения всех постов
+- Request:
+```
+query GetAllPosts {
+  GetAllPosts(limit: 1, offset: 0) {
+    id
+    content
+    Commentable
+    user {
+      id
+      name
+      surname
+    }
+    
+  }
+}
+```
+-  Response:
+```
+{
+  "data": {
+    "GetAllPosts": [
+      {
+        "id": 1,
+        "content": "Сажаем тыкву с Копатычем",
+        "Commentable": true,
+        "user": {
+          "id": 1,
+          "name": "Копатыч",
+          "surname": "Пчолыч"
+        }
+      }
+    ]
+  }
+}
+```
+
+### Запрос на получение Поста с комментариями
+- Request:
+```
+query GetPostById {
+  GetPostById(id: 1, limit: 1, offset: 0) {
+    id
+    content
+    Commentable
+    
+    user {
+      id
+      name
+      surname
+    }
+    Comments {
       id
       content
+      parentIdComment
       user {
         id
         name
@@ -150,32 +200,24 @@ query {
 ```
 {
   "data": {
-    "post": {
+    "GetPostById": {
       "id": 1,
-      "content": "Растим огурцы использую в качестве удобрения мандариновые шкурки",
+      "content": "Сажаем тыкву с Копатычем",
       "Commentable": true,
       "user": {
         "id": 1,
-        "name": "212",
-        "surname": "Пе23рвый"
+        "name": "Копатыч",
+        "surname": "Пчолыч"
       },
       "Comments": [
         {
           "id": 1,
-          "content": "Вау способ отличный! Вырастил уже тонную!",
+          "content": "Если перед тем как посадить тыкву добавить народное средство под названием... читать дальше",
+          "parentIdComment": -1,
           "user": {
             "id": 1,
-            "name": "212",
-            "surname": "Пе23рвый"
-          }
-        },
-        {
-          "id": 2,
-          "content": "Вау способ отличный! Вырастил уже тонную!",
-          "user": {
-            "id": 1,
-            "name": "212",
-            "surname": "Пе23рвый"
+            "name": "Копатыч",
+            "surname": "Пчолыч"
           }
         }
       ]
@@ -189,8 +231,10 @@ query {
 ```
 mutation UpdatePost {
   postUpdate(input: {
-    Commentable: true
-    Id: 1
+    Id: 1,
+    Commentable: true,
+    UserId:1
+    
   }) {
     id
     content
@@ -215,12 +259,12 @@ mutation UpdatePost {
 ### Запрос на создание Комментария
 - Request:
 ```
-mutation {
+mutation CreateComment {
   createComment(input: {
-    userId: 4,
-    parentIdComment: -1, # Необходимо указать любое отрицательное число, для того чтобы сделать комментарий корневым
-    content: "Вау способ отличный! Вырастил уже тонную!",
-    postId: 1
+    userId: 2,
+    postId: 1,
+    parentIdComment: 1,
+    content: "Петр молодчина! И картошку завез и научил ее сажать"
   }) {
     id
     content
@@ -235,8 +279,8 @@ mutation {
   "data": {
     "createComment": {
       "id": 2,
-      "content": "Вау способ отличный! Вырастил уже тонную!",
-      "parentIdComment": -1,
+      "content": "Петр молодчина! И картошку завез и научил ее сажать",
+      "parentIdComment": 1,
       "postId": 1
     }
   }
@@ -246,16 +290,26 @@ mutation {
 ### Запрос на получения Комментария (и всех его дочерних комментариев)
 - Request:
 ```
-query {
-  commentReplies(commentId: 1,limit:3 ,offset: 0) {
+query GetPostById {
+  GetPostById(id: 1, limit: 3, offset: 0) {
     id
     content
-    parentIdComment
-    postId
+    Commentable
+    
     user {
       id
       name
       surname
+    }
+    Comments {
+      id
+      content
+      parentIdComment
+      user {
+        id
+        name
+        surname
+      }
     }
   }
 }
@@ -264,41 +318,48 @@ query {
 ```
 {
   "data": {
-    "commentReplies": [
-      {
+    "GetPostById": {
+      "id": 1,
+      "content": "Сажаем тыкву с Копатычем",
+      "Commentable": true,
+      "user": {
         "id": 1,
-        "content": "1q345678901",
-        "parentIdComment": -1,
-        "postId": 1,
-        "user": {
-          "id": 1,
-          "name": "212",
-          "surname": "Пе23рвый"
-        }
+        "name": "Копатыч",
+        "surname": "Пчолыч"
       },
-      {
-        "id": 3,
-        "content": "Ставь лайк у кого нет дачи, но читают посты про огород",
-        "parentIdComment": 1,
-        "postId": 1,
-        "user": {
+      "Comments": [
+        {
+          "id": 1,
+          "content": "Если перед тем как посадить тыкву добавить народное средство под названием... читать дальше",
+          "parentIdComment": -1,
+          "user": {
+            "id": 1,
+            "name": "Копатыч",
+            "surname": "Пчолыч"
+          }
+        },
+        {
           "id": 2,
-          "name": "Антон",
-          "surname": "Заморский"
+          "content": "Петр молодчина! И картошку завез и научил ее сажать",
+          "parentIdComment": 1,
+          "user": {
+            "id": 2,
+            "name": "Георгий",
+            "surname": "ФамилиюНеПридумал"
+          }
+        },
+        {
+          "id": 3,
+          "content": "да уж! Не поспоришь!",
+          "parentIdComment": 2,
+          "user": {
+            "id": 1,
+            "name": "Копатыч",
+            "surname": "Пчолыч"
+          }
         }
-      },
-      {
-        "id": 2,
-        "content": "Отличный рецепт хорошего урожая!",
-        "parentIdComment": 1,
-        "postId": 1,
-        "user": {
-          "id": 1,
-          "name": "212",
-          "surname": "Пе23рвый"
-        }
-      }
-    ]
+      ]
+    }
   }
 }
 ```
