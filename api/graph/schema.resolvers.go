@@ -19,7 +19,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 	new_user := &model.User{
 		Name:    input.Name,
 		Surname: input.Surname,
-		ID:      -1,
+		ID:      -1, // Указываем -1, тк при созданиее элемента в БД, подставим нужное значение по id записи
 	}
 
 	res, err := r.userService.Create(ctx, new_user)
@@ -39,11 +39,10 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) 
 	new_post := &model.Post{
 		Commentable: input.Commentable,
 		Content:     input.Content,
-		ID:          -1,
+		ID:          -1, // Указываем -1, тк при созданиее элемента в БД, подставим нужное значение по id записи
 		Comments:    comments,
 		User:        &user,
 	}
-	//r.Posts = append(r.Posts, new_post)
 	res, err := r.postService.Create(r.ctx, new_post)
 	if err != nil {
 		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail create post", zap.Error(err))
@@ -54,15 +53,13 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) 
 
 // CreateComment is the resolver for the createComment field.
 func (r *mutationResolver) CreateComment(ctx context.Context, input model.NewComment) (*model.Comment, error) {
-	//comments := []*model.Comment{}
-
 	user := model.User{}
 	user.ID = input.UserID
 
 	new_comment := &model.Comment{
 		Content:         input.Content,
-		ID:              -1,
-		Comments:        nil,
+		ID:              -1,  // Указываем -1, тк при созданиее элемента в БД, подставим нужное значение по id записи
+		Comments:        nil, // При создании у поста отсутствуют комментарии
 		User:            &user,
 		ParentIDComment: input.ParentIDComment,
 		PostID:          input.PostID,
@@ -81,7 +78,6 @@ func (r *mutationResolver) PostUpdate(ctx context.Context, input model.UpdatePos
 		Commentable: input.Commentable,
 		ID:          input.ID,
 	}
-	//r.Posts = append(r.Posts, new_post)
 	flag, err := r.postService.Update(r.ctx, new_post)
 	if err != nil {
 		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail update post", zap.Error(err))
@@ -93,8 +89,8 @@ func (r *mutationResolver) PostUpdate(ctx context.Context, input model.UpdatePos
 	return new_post, nil
 }
 
-// Posts is the resolver for the posts field.
-func (r *queryResolver) Posts(ctx context.Context, limit *int32, offset *int32) ([]*model.Post, error) {
+// GetAllPosts is the resolver for the GetAllPosts field.
+func (r *queryResolver) GetAllPosts(ctx context.Context, limit *int32, offset *int32) ([]*model.Post, error) {
 	posts, err := r.postService.GetAllPost(r.ctx, int(*limit), int(*offset))
 	if err != nil {
 		logger.GetLoggerFromCtx(r.ctx).Info(ctx, "Fail get all posts", zap.Error(err))
@@ -103,22 +99,22 @@ func (r *queryResolver) Posts(ctx context.Context, limit *int32, offset *int32) 
 	return posts, nil
 }
 
-// Post is the resolver for the post field.
-func (r *queryResolver) Post(ctx context.Context, id int32, limit *int32, offset *int32) (*model.Post, error) {
-	if id < 1 {
+// GetPostByID is the resolver for the GetPostById field.
+func (r *queryResolver) GetPostByID(ctx context.Context, id int32, limit *int32, offset *int32) (*model.Post, error) {
+	if id < 1 { // Проверка корректности введенных данных
 		errorW := "Fail get user becouse ID must be >= 1"
 		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 
 	}
-	post, err := r.postService.Get(r.ctx, int(id))
+	post, err := r.postService.Get(r.ctx, int(id)) // Получаем пост
 	if err != nil {
 		logger.GetLoggerFromCtx(r.ctx).Info(ctx, "Fail get user", zap.Error(err))
 		return nil, err
 	}
 
 	logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Get all comment of post")
-	comments, err := r.commentService.GetAllPost(r.ctx, int(post.ID), int(*limit), int(*offset))
+	comments, err := r.commentService.GetAllPost(r.ctx, int(post.ID), int(*limit), int(*offset)) // И все его комментарии
 	if err != nil {
 		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail get All comment of the post", zap.Error(err))
 		return nil, err
@@ -126,25 +122,11 @@ func (r *queryResolver) Post(ctx context.Context, id int32, limit *int32, offset
 	logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, fmt.Sprintf("%v", len(comments)))
 
 	post.Comments = comments
-
 	return post, nil
 }
 
-// PostComments is the resolver for the postComments field.
-func (r *queryResolver) PostComments(ctx context.Context, postID int32, limit *int32, offset *int32) ([]*model.Comment, error) {
-	PostIdi := postID
-	logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Get all comment of post")
-	res, err := r.commentService.GetAllPost(r.ctx, int(PostIdi), int(*limit), int(*offset))
-	if err != nil {
-		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, "Fail get All comment of the post", zap.Error(err))
-		return nil, err
-	}
-	logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, fmt.Sprintf("%v", len(res)))
-	return res, nil
-}
-
-// CommentReplies is the resolver for the commentReplies field.
-func (r *queryResolver) CommentReplies(ctx context.Context, commentID int32, limit *int32, offset *int32) ([]*model.Comment, error) {
+// GetRepliesByCommentID is the resolver for the GetRepliesByCommentId field.
+func (r *queryResolver) GetRepliesByCommentID(ctx context.Context, commentID int32, limit *int32, offset *int32) ([]*model.Comment, error) {
 	if commentID < 1 {
 		errorW := "Fail get comment becouse ID must be >= 1"
 		logger.GetLoggerFromCtx(r.ctx).Info(r.ctx, errorW)
@@ -159,8 +141,8 @@ func (r *queryResolver) CommentReplies(ctx context.Context, commentID int32, lim
 	return res, nil
 }
 
-// User is the resolver for the user field.
-func (r *queryResolver) User(ctx context.Context, id int32) (*model.User, error) {
+// GetUser is the resolver for the GetUser field.
+func (r *queryResolver) GetUser(ctx context.Context, id int32) (*model.User, error) {
 	idi := id
 
 	if idi < 1 {
@@ -171,11 +153,6 @@ func (r *queryResolver) User(ctx context.Context, id int32) (*model.User, error)
 		logger.GetLoggerFromCtx(r.ctx).Info(ctx, "Fail get user", zap.Error(err))
 	}
 	return res, nil
-}
-
-// Users is the resolver for the users field.
-func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
-	panic(fmt.Errorf("not implemented: Users - users"))
 }
 
 // Mutation returns MutationResolver implementation.

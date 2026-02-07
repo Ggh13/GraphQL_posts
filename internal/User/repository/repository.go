@@ -5,20 +5,13 @@ import (
 	"fmt"
 	"qraphQL_posts/api/graph/model"
 	localstorage "qraphQL_posts/pkg/localStorage"
+	"qraphQL_posts/pkg/logger"
 )
 
 type Repository struct {
 	localstorage *localstorage.Storage
 }
 
-/*
-	type Repository interface {
-		Get(ctx context.Context) (bool, error)
-		Create(ctx context.Context, User *model.User) (bool, error)
-		Update(ctx context.Context, User *model.User) (bool, error)
-		Delete(ctx context.Context, User *model.User) (bool, error)
-	}
-*/
 func New(localstorageR *localstorage.Storage) Repository {
 	return Repository{
 		localstorage: localstorageR,
@@ -35,7 +28,8 @@ func (r Repository) Update(ctx context.Context, User *model.User) (bool, error) 
 }
 func (r Repository) Get(ctx context.Context, userID int) (*model.User, error) {
 	if userID > len(r.localstorage.Users) {
-		return nil, fmt.Errorf("User does not exist")
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("UserRepository.Create: User does not exist"))
+		return nil, fmt.Errorf("UserRepository.Create: User does not exist")
 	}
 	return &r.localstorage.Users[userID-1], nil
 }

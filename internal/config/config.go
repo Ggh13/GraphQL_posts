@@ -12,11 +12,9 @@ import (
 
 type Config struct {
 	PostgresCFG postgres.Config `env:"POSTGRES" env-default:"POSTGRES" yaml:"POSTGRES"`
-
-	RestHost    string `env:"REST_HOST" env-default:"REST_HOST" yaml:"REST_HOST"`
-	RestPort    string `env:"REST_PORT" env-default:"REST_PORT" yaml:"REST_PORT"`
-	FrontendURL string `env:"FRONTEND_URL" env-default:"FRONTEND_URL" yaml:"FRONTEND_URL"`
-	TypeDB      string `env:"TYPE_DB" env-default:"TYPE_DB" yaml:"TYPE_DB"`
+	RestHost    string          `env:"REST_HOST" env-default:"REST_HOST" yaml:"REST_HOST"`
+	TypeDB      string          `env:"TYPE_DB" env-default:"TYPE_DB" yaml:"TYPE_DB"`
+	PORT        string          `env:"PORT" env-default:"PORT" yaml:"PORT"`
 }
 
 func NewConfig(ctx context.Context) (*Config, error) {

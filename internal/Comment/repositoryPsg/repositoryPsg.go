@@ -10,16 +10,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-/*
-CREATE TABLE IF NOT EXISTS comments (
-
-		id SERIAL PRIMARY KEY,
-		post_id INT NOT NULL,
-		parent_id INT,
-		author_id INT NOT NULL,
-		content VARCHAR(2000) NOT NULL,
-	);
-*/
 const (
 	queryCreateComment = `
         INSERT INTO comments (post_id, parent_id, author_id, content) 
@@ -89,15 +79,6 @@ type Repository struct {
 	pgDB *pgxpool.Pool
 }
 
-/*
-	type Repository interface {
-		Get(ctx context.Context) (bool, error)
-		Create(ctx context.Context, User *model.User) (bool, error)
-		Update(ctx context.Context, User *model.User) (bool, error)
-		Delete(ctx context.Context, User *model.User) (bool, error)
-	}
-*/
-
 func New(ctx context.Context, pgDB *pgxpool.Pool) *Repository {
 	return &Repository{pgDB: pgDB}
 }
@@ -110,7 +91,9 @@ func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.
 		&id_user,
 	).Scan(&id_user)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create post, user with this id does not exist: %w", err)
+		errorW := fmt.Sprint("CommentRepository.Create: failed to create post, user with this id does not exist: %w", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return nil, fmt.Errorf(errorW)
 	}
 
 	if Comment.ParentIDComment >= 1 {
@@ -120,7 +103,9 @@ func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.
 		).Scan(&id_parent)
 
 		if err != nil {
-			return nil, fmt.Errorf("failed to create comment. Parent comment must exist: %w", err)
+			errorW := fmt.Sprint("CommentRepository.Create: failed to create comment. Parent comment must exist: %w", err)
+			logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+			return nil, fmt.Errorf(errorW)
 		}
 	}
 
@@ -133,11 +118,15 @@ func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.
 	).Scan(&id)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to create comment: %w", err)
+		errorW := fmt.Sprint("CommentRepository.Create: failed to create comment: %w", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return nil, fmt.Errorf(errorW)
 	}
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
-		return nil, fmt.Errorf("Error in Create comment")
+		errorW := fmt.Sprint("CommentRepository.Create: Error in Create comment")
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return nil, fmt.Errorf(errorW)
 	}
 
 	Comment.ID = int32(idInt)
@@ -149,16 +138,11 @@ func (r Repository) Update(ctx context.Context, Comment *model.Comment) (bool, e
 	return false, nil
 }
 func (r Repository) Get(ctx context.Context, CommentId int) (*model.Comment, error) {
-	/*
-		if CommentId >= len(r.localstorage.Comments) {
-			return nil, fmt.Errorf("User does not exist")
-		}
-			return &r.localstorage.Comments[CommentId], nil
-	*/
-
 	rows, err := r.pgDB.Query(ctx, queryGetComment, CommentId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get comments %w", err)
+		errorW := fmt.Sprint("CommentRepository.Get: failed to get comments %w", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return nil, fmt.Errorf(errorW)
 	}
 	defer rows.Close()
 
@@ -166,7 +150,6 @@ func (r Repository) Get(ctx context.Context, CommentId int) (*model.Comment, err
 		return nil, nil
 	}
 
-	// Fisrt stage. Get ALL comments of this post
 	comments := make(map[int]*model.Comment)
 	for rows.Next() {
 		var comment model.Comment
@@ -180,7 +163,9 @@ func (r Repository) Get(ctx context.Context, CommentId int) (*model.Comment, err
 			&comment.User.Surname,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan comment: %w", err)
+			errorW := fmt.Sprint("CommentRepository.Get: failed to scan comment: %w", err)
+			logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+			return nil, fmt.Errorf(errorW)
 		}
 		comments[int(comment.ID)] = &comment
 
@@ -200,31 +185,12 @@ func (r Repository) Get(ctx context.Context, CommentId int) (*model.Comment, err
 func (r Repository) Delete(ctx context.Context, Post int) (bool, error) {
 	return false, nil
 }
-func (r Repository) GetAllPost(ctx context.Context, PostId int) ([]*model.Comment, error) {
-	/*	if PostId >= len(r.localstorage.Posts) || PostId < 0 {
-					return nil, fmt.Errorf("User does not exist")
-				}
-				fmt.Println(r.localstorage.Posts[PostId].Comments)
-				return r.localstorage.Posts[PostId].Comments, nil
-				queryGetAllCommentOfPost = `
-		        SELECT
-					c.id,
-					c.content,
-					c.parent_id,
-					c.post_id,
-					u.id as user_id,
-					u.name as user_name,
-					u.surname as user_surname
-				FROM comments c
-				LEFT JOIN users u ON c.author_id = u.id
-				WHERE c.post_id = $1
-				ORDER BY c.id
-		    `
-	*/
-
+func (r Repository) GetAllCommentOfPost(ctx context.Context, PostId int) ([]*model.Comment, error) {
 	rows, err := r.pgDB.Query(ctx, queryGetAllCommentOfPost, PostId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get comments hierarchy: %w", err)
+		errorW := fmt.Sprint("CommentRepository.GetAllCommentOfPost: failed to get comments hierarchy: %w", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return nil, fmt.Errorf(errorW)
 	}
 	defer rows.Close()
 
@@ -245,13 +211,15 @@ func (r Repository) GetAllPost(ctx context.Context, PostId int) ([]*model.Commen
 		comment.User = &user
 		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprintf("There are com %v ", comment.ID))
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan comment: %w", err)
+			errorW := fmt.Sprint("CommentRepository.GetAllCommentOfPost: failed to scan comment: %w", err)
+			logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+			return nil, fmt.Errorf(errorW)
+
 		}
 		res = append(res, &comment)
 
 	}
 
-	logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprintf("There are len  %v ", len(res)))
 	return res, nil
 }
 
@@ -263,7 +231,9 @@ func (r Repository) GetPostId(ctx context.Context, CommentId int) (int, error) {
 	)
 
 	if err != nil {
-		return -1, fmt.Errorf("Failed to get post by ID comment %s %w", CommentId, err)
+		errorW := fmt.Sprint("CommentRepository.GetPostId: Failed to get post by ID comment %s %w", CommentId, err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return -1, fmt.Errorf(errorW)
 	}
 
 	return postId, nil

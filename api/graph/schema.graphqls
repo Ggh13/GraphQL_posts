@@ -23,7 +23,7 @@ type Post {
   user: User!
   content: String!
   Commentable: Boolean!
-  Comments(limit: Int = 10, offset: Int = 0): [Comment]!
+  Comments: [Comment]!
 }
 
 input NewPost {
@@ -45,7 +45,7 @@ type Comment {
   content: String!
   parentIdComment: Int!
   postId: Int!
-  Comments(limit: Int = 1, offset: Int = 0): [Comment]!
+  Comments: [Comment]!
 }
 
 input NewComment {
@@ -65,15 +65,9 @@ type Mutation {
 
 
 type Query {
-  posts(limit: Int = 10, offset: Int = 0): [Post]
-
-  post(id: Int!, limit: Int = 10, offset: Int = 0): Post
+  GetAllPosts(limit: Int = 10, offset: Int = 0): [Post]
+  GetPostById(id: Int!, limit: Int = 10, offset: Int = 0): Post
+  GetRepliesByCommentId(commentId: Int!, limit: Int = 10, offset: Int = 0): [Comment]!
   
-  postComments(postId: Int!, limit: Int = 10, offset: Int = 0): [Comment]!
-  
-  commentReplies(commentId: Int!, limit: Int = 10, offset: Int = 0): [Comment]!
-  
-  # Получить пользователя
-  user(id: Int!): User
-  users: [User]!
+  GetUser(id: Int!): User
 }

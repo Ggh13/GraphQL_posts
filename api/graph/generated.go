@@ -48,7 +48,7 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Comment struct {
-		Comments        func(childComplexity int, limit *int32, offset *int32) int
+		Comments        func(childComplexity int) int
 		Content         func(childComplexity int) int
 		ID              func(childComplexity int) int
 		ParentIDComment func(childComplexity int) int
@@ -65,19 +65,17 @@ type ComplexityRoot struct {
 
 	Post struct {
 		Commentable func(childComplexity int) int
-		Comments    func(childComplexity int, limit *int32, offset *int32) int
+		Comments    func(childComplexity int) int
 		Content     func(childComplexity int) int
 		ID          func(childComplexity int) int
 		User        func(childComplexity int) int
 	}
 
 	Query struct {
-		CommentReplies func(childComplexity int, commentID int32, limit *int32, offset *int32) int
-		Post           func(childComplexity int, id int32, limit *int32, offset *int32) int
-		PostComments   func(childComplexity int, postID int32, limit *int32, offset *int32) int
-		Posts          func(childComplexity int, limit *int32, offset *int32) int
-		User           func(childComplexity int, id int32) int
-		Users          func(childComplexity int) int
+		GetAllPosts           func(childComplexity int, limit *int32, offset *int32) int
+		GetPostByID           func(childComplexity int, id int32, limit *int32, offset *int32) int
+		GetRepliesByCommentID func(childComplexity int, commentID int32, limit *int32, offset *int32) int
+		GetUser               func(childComplexity int, id int32) int
 	}
 
 	User struct {
@@ -94,12 +92,10 @@ type MutationResolver interface {
 	PostUpdate(ctx context.Context, input model.UpdatePost) (*model.Post, error)
 }
 type QueryResolver interface {
-	Posts(ctx context.Context, limit *int32, offset *int32) ([]*model.Post, error)
-	Post(ctx context.Context, id int32, limit *int32, offset *int32) (*model.Post, error)
-	PostComments(ctx context.Context, postID int32, limit *int32, offset *int32) ([]*model.Comment, error)
-	CommentReplies(ctx context.Context, commentID int32, limit *int32, offset *int32) ([]*model.Comment, error)
-	User(ctx context.Context, id int32) (*model.User, error)
-	Users(ctx context.Context) ([]*model.User, error)
+	GetAllPosts(ctx context.Context, limit *int32, offset *int32) ([]*model.Post, error)
+	GetPostByID(ctx context.Context, id int32, limit *int32, offset *int32) (*model.Post, error)
+	GetRepliesByCommentID(ctx context.Context, commentID int32, limit *int32, offset *int32) ([]*model.Comment, error)
+	GetUser(ctx context.Context, id int32) (*model.User, error)
 }
 
 type executableSchema struct {
@@ -126,12 +122,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			break
 		}
 
-		args, err := ec.field_Comment_Comments_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Comment.Comments(childComplexity, args["limit"].(*int32), args["offset"].(*int32)), true
+		return e.complexity.Comment.Comments(childComplexity), true
 	case "Comment.content":
 		if e.complexity.Comment.Content == nil {
 			break
@@ -219,12 +210,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			break
 		}
 
-		args, err := ec.field_Post_Comments_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Post.Comments(childComplexity, args["limit"].(*int32), args["offset"].(*int32)), true
+		return e.complexity.Post.Comments(childComplexity), true
 	case "Post.content":
 		if e.complexity.Post.Content == nil {
 			break
@@ -244,67 +230,50 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Post.User(childComplexity), true
 
-	case "Query.commentReplies":
-		if e.complexity.Query.CommentReplies == nil {
+	case "Query.GetAllPosts":
+		if e.complexity.Query.GetAllPosts == nil {
 			break
 		}
 
-		args, err := ec.field_Query_commentReplies_args(ctx, rawArgs)
+		args, err := ec.field_Query_GetAllPosts_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.CommentReplies(childComplexity, args["commentId"].(int32), args["limit"].(*int32), args["offset"].(*int32)), true
-	case "Query.post":
-		if e.complexity.Query.Post == nil {
+		return e.complexity.Query.GetAllPosts(childComplexity, args["limit"].(*int32), args["offset"].(*int32)), true
+	case "Query.GetPostById":
+		if e.complexity.Query.GetPostByID == nil {
 			break
 		}
 
-		args, err := ec.field_Query_post_args(ctx, rawArgs)
+		args, err := ec.field_Query_GetPostById_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.Post(childComplexity, args["id"].(int32), args["limit"].(*int32), args["offset"].(*int32)), true
-	case "Query.postComments":
-		if e.complexity.Query.PostComments == nil {
+		return e.complexity.Query.GetPostByID(childComplexity, args["id"].(int32), args["limit"].(*int32), args["offset"].(*int32)), true
+	case "Query.GetRepliesByCommentId":
+		if e.complexity.Query.GetRepliesByCommentID == nil {
 			break
 		}
 
-		args, err := ec.field_Query_postComments_args(ctx, rawArgs)
+		args, err := ec.field_Query_GetRepliesByCommentId_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.PostComments(childComplexity, args["postId"].(int32), args["limit"].(*int32), args["offset"].(*int32)), true
-	case "Query.posts":
-		if e.complexity.Query.Posts == nil {
+		return e.complexity.Query.GetRepliesByCommentID(childComplexity, args["commentId"].(int32), args["limit"].(*int32), args["offset"].(*int32)), true
+	case "Query.GetUser":
+		if e.complexity.Query.GetUser == nil {
 			break
 		}
 
-		args, err := ec.field_Query_posts_args(ctx, rawArgs)
+		args, err := ec.field_Query_GetUser_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.Posts(childComplexity, args["limit"].(*int32), args["offset"].(*int32)), true
-	case "Query.user":
-		if e.complexity.Query.User == nil {
-			break
-		}
-
-		args, err := ec.field_Query_user_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.User(childComplexity, args["id"].(int32)), true
-	case "Query.users":
-		if e.complexity.Query.Users == nil {
-			break
-		}
-
-		return e.complexity.Query.Users(childComplexity), true
+		return e.complexity.Query.GetUser(childComplexity, args["id"].(int32)), true
 
 	case "User.id":
 		if e.complexity.User.ID == nil {
@@ -453,22 +422,6 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
-func (ec *executionContext) field_Comment_Comments_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
-	if err != nil {
-		return nil, err
-	}
-	args["limit"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint32)
-	if err != nil {
-		return nil, err
-	}
-	args["offset"] = arg1
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_createComment_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -513,7 +466,7 @@ func (ec *executionContext) field_Mutation_postUpdate_args(ctx context.Context, 
 	return args, nil
 }
 
-func (ec *executionContext) field_Post_Comments_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Query_GetAllPosts_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
@@ -529,18 +482,28 @@ func (ec *executionContext) field_Post_Comments_args(ctx context.Context, rawArg
 	return args, nil
 }
 
-func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Query_GetPostById_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "name", ec.unmarshalNString2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNInt2int32)
 	if err != nil {
 		return nil, err
 	}
-	args["name"] = arg0
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg2
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_commentReplies_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Query_GetRepliesByCommentId_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "commentId", ec.unmarshalNInt2int32)
@@ -561,28 +524,7 @@ func (ec *executionContext) field_Query_commentReplies_args(ctx context.Context,
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_postComments_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "postId", ec.unmarshalNInt2int32)
-	if err != nil {
-		return nil, err
-	}
-	args["postId"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
-	if err != nil {
-		return nil, err
-	}
-	args["limit"] = arg1
-	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint32)
-	if err != nil {
-		return nil, err
-	}
-	args["offset"] = arg2
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_post_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Query_GetUser_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNInt2int32)
@@ -590,43 +532,17 @@ func (ec *executionContext) field_Query_post_args(ctx context.Context, rawArgs m
 		return nil, err
 	}
 	args["id"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
-	if err != nil {
-		return nil, err
-	}
-	args["limit"] = arg1
-	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint32)
-	if err != nil {
-		return nil, err
-	}
-	args["offset"] = arg2
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_posts_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "name", ec.unmarshalNString2string)
 	if err != nil {
 		return nil, err
 	}
-	args["limit"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint32)
-	if err != nil {
-		return nil, err
-	}
-	args["offset"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_user_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNInt2int32)
-	if err != nil {
-		return nil, err
-	}
-	args["id"] = arg0
+	args["name"] = arg0
 	return args, nil
 }
 
@@ -851,7 +767,7 @@ func (ec *executionContext) _Comment_Comments(ctx context.Context, field graphql
 	)
 }
 
-func (ec *executionContext) fieldContext_Comment_Comments(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Comment_Comments(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Comment",
 		Field:      field,
@@ -874,17 +790,6 @@ func (ec *executionContext) fieldContext_Comment_Comments(ctx context.Context, f
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Comment", field.Name)
 		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Comment_Comments_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
 	}
 	return fc, nil
 }
@@ -1239,7 +1144,7 @@ func (ec *executionContext) _Post_Comments(ctx context.Context, field graphql.Co
 	)
 }
 
-func (ec *executionContext) fieldContext_Post_Comments(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Post_Comments(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Post",
 		Field:      field,
@@ -1263,29 +1168,18 @@ func (ec *executionContext) fieldContext_Post_Comments(ctx context.Context, fiel
 			return nil, fmt.Errorf("no field named %q was found under type Comment", field.Name)
 		},
 	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Post_Comments_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_GetAllPosts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Query_posts,
+		ec.fieldContext_Query_GetAllPosts,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Posts(ctx, fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
+			return ec.resolvers.Query().GetAllPosts(ctx, fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
 		},
 		nil,
 		ec.marshalOPost2ᚕᚖqraphQL_postsᚋapiᚋgraphᚋmodelᚐPost,
@@ -1294,7 +1188,7 @@ func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.Coll
 	)
 }
 
-func (ec *executionContext) fieldContext_Query_posts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_GetAllPosts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -1323,22 +1217,22 @@ func (ec *executionContext) fieldContext_Query_posts(ctx context.Context, field 
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_posts_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_GetAllPosts_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_post(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_GetPostById(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Query_post,
+		ec.fieldContext_Query_GetPostById,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Post(ctx, fc.Args["id"].(int32), fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
+			return ec.resolvers.Query().GetPostByID(ctx, fc.Args["id"].(int32), fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
 		},
 		nil,
 		ec.marshalOPost2ᚖqraphQL_postsᚋapiᚋgraphᚋmodelᚐPost,
@@ -1347,7 +1241,7 @@ func (ec *executionContext) _Query_post(ctx context.Context, field graphql.Colle
 	)
 }
 
-func (ec *executionContext) fieldContext_Query_post(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_GetPostById(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -1376,22 +1270,22 @@ func (ec *executionContext) fieldContext_Query_post(ctx context.Context, field g
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_post_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_GetPostById_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_postComments(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_GetRepliesByCommentId(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Query_postComments,
+		ec.fieldContext_Query_GetRepliesByCommentId,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().PostComments(ctx, fc.Args["postId"].(int32), fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
+			return ec.resolvers.Query().GetRepliesByCommentID(ctx, fc.Args["commentId"].(int32), fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
 		},
 		nil,
 		ec.marshalNComment2ᚕᚖqraphQL_postsᚋapiᚋgraphᚋmodelᚐComment,
@@ -1400,7 +1294,7 @@ func (ec *executionContext) _Query_postComments(ctx context.Context, field graph
 	)
 }
 
-func (ec *executionContext) fieldContext_Query_postComments(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_GetRepliesByCommentId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -1431,77 +1325,22 @@ func (ec *executionContext) fieldContext_Query_postComments(ctx context.Context,
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_postComments_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_GetRepliesByCommentId_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_commentReplies(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_GetUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Query_commentReplies,
+		ec.fieldContext_Query_GetUser,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().CommentReplies(ctx, fc.Args["commentId"].(int32), fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
-		},
-		nil,
-		ec.marshalNComment2ᚕᚖqraphQL_postsᚋapiᚋgraphᚋmodelᚐComment,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Query_commentReplies(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Comment_id(ctx, field)
-			case "user":
-				return ec.fieldContext_Comment_user(ctx, field)
-			case "content":
-				return ec.fieldContext_Comment_content(ctx, field)
-			case "parentIdComment":
-				return ec.fieldContext_Comment_parentIdComment(ctx, field)
-			case "postId":
-				return ec.fieldContext_Comment_postId(ctx, field)
-			case "Comments":
-				return ec.fieldContext_Comment_Comments(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Comment", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_commentReplies_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_user(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Query_user,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().User(ctx, fc.Args["id"].(int32))
+			return ec.resolvers.Query().GetUser(ctx, fc.Args["id"].(int32))
 		},
 		nil,
 		ec.marshalOUser2ᚖqraphQL_postsᚋapiᚋgraphᚋmodelᚐUser,
@@ -1510,7 +1349,7 @@ func (ec *executionContext) _Query_user(ctx context.Context, field graphql.Colle
 	)
 }
 
-func (ec *executionContext) fieldContext_Query_user(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_GetUser(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -1535,46 +1374,9 @@ func (ec *executionContext) fieldContext_Query_user(ctx context.Context, field g
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_user_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_GetUser_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_users(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Query_users,
-		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Query().Users(ctx)
-		},
-		nil,
-		ec.marshalNUser2ᚕᚖqraphQL_postsᚋapiᚋgraphᚋmodelᚐUser,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Query_users(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_User_id(ctx, field)
-			case "name":
-				return ec.fieldContext_User_name(ctx, field)
-			case "surname":
-				return ec.fieldContext_User_surname(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
-		},
 	}
 	return fc, nil
 }
@@ -3597,7 +3399,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "posts":
+		case "GetAllPosts":
 			field := field
 
 			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
@@ -3606,7 +3408,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_posts(ctx, field)
+				res = ec._Query_GetAllPosts(ctx, field)
 				return res
 			}
 
@@ -3616,7 +3418,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "post":
+		case "GetPostById":
 			field := field
 
 			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
@@ -3625,7 +3427,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_post(ctx, field)
+				res = ec._Query_GetPostById(ctx, field)
 				return res
 			}
 
@@ -3635,7 +3437,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "postComments":
+		case "GetRepliesByCommentId":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -3644,7 +3446,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_postComments(ctx, field)
+				res = ec._Query_GetRepliesByCommentId(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -3657,29 +3459,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "commentReplies":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_commentReplies(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "user":
+		case "GetUser":
 			field := field
 
 			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
@@ -3688,29 +3468,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_user(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "users":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_users(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
+				res = ec._Query_GetUser(ctx, field)
 				return res
 			}
 
@@ -4271,44 +4029,6 @@ func (ec *executionContext) unmarshalNUpdatePost2qraphQL_postsᚋapiᚋgraphᚋm
 
 func (ec *executionContext) marshalNUser2qraphQL_postsᚋapiᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {
 	return ec._User(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNUser2ᚕᚖqraphQL_postsᚋapiᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v []*model.User) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOUser2ᚖqraphQL_postsᚋapiᚋgraphᚋmodelᚐUser(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	return ret
 }
 
 func (ec *executionContext) marshalNUser2ᚖqraphQL_postsᚋapiᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {

@@ -1,18 +1,12 @@
-package user_service
+package post_service
 
 import (
 	"context"
 	"fmt"
 	"qraphQL_posts/api/graph"
 	"qraphQL_posts/api/graph/model"
+	"qraphQL_posts/pkg/logger"
 )
-
-/*
-	Create(ctx context.Context, Post *model.Post) (bool, error)
-	Update(ctx context.Context, Post *model.Post) (bool, error)
-	Delete(ctx context.Context, postID int) (bool, error)
-	Get(ctx context.Context, postID int) (*model.Post, error)
-*/
 
 type Repository interface {
 	Get(ctx context.Context, PostId int) (*model.Post, error)
@@ -33,16 +27,18 @@ func New(ctx context.Context, r Repository) Service {
 func (s Service) Create(ctx context.Context, Post *model.Post) (*model.Post, error) {
 	fl, err := s.repo.Create(ctx, Post)
 	if err != nil {
-		return fl, fmt.Errorf("%s", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostService.Create: %s", err))
+		return fl, fmt.Errorf("PostService.Create: %s", err)
 	}
 	return fl, nil
 }
 
 func (s Service) Update(ctx context.Context, Post *model.Post) (bool, error) {
-
+	//В функции реализован Update ТОЛЬКО для изменения прав на комментирование, для безопасности
 	fl, err := s.repo.Update(ctx, Post)
 	if err != nil {
-		return fl, fmt.Errorf("%s", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostService.Update: %s", err))
+		return fl, fmt.Errorf("PostService.Update: %s", err)
 	}
 	return true, nil
 }
@@ -54,7 +50,7 @@ func (s Service) Delete(ctx context.Context, postID int) (bool, error) {
 func (s Service) Get(ctx context.Context, postID int) (*model.Post, error) {
 	res, err := s.repo.Get(ctx, postID)
 	if err != nil {
-		return nil, fmt.Errorf("%s", err)
+		return nil, fmt.Errorf("PostService.Get: %s", err)
 	}
 
 	return res, nil
@@ -63,7 +59,8 @@ func (s Service) Get(ctx context.Context, postID int) (*model.Post, error) {
 func (s Service) GetAllPost(ctx context.Context, limit int, offset int) ([]*model.Post, error) {
 	posts, err := s.repo.GetAllPosts(ctx)
 	if err != nil {
-		return nil, fmt.Errorf(" Error. Cant get all post %s", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostService.GetAllPost: Error. Cant get all post %s", err))
+		return nil, fmt.Errorf("PostService.GetAllPost: Error. Cant get all post %s", err)
 	}
 	err = graph.CheckLimit(posts, &limit, &offset)
 	return posts[offset : offset+limit], nil

@@ -5,8 +5,10 @@ import (
 	"fmt"
 
 	router "qraphQL_posts/api"
+	"qraphQL_posts/api/graph"
 	"qraphQL_posts/pkg/logger"
 	"qraphQL_posts/pkg/postgres"
+	unitTest "qraphQL_posts/test"
 
 	user_repository "qraphQL_posts/internal/User/repository"
 	user_psg_repository "qraphQL_posts/internal/User/repositoryPsg"
@@ -23,10 +25,16 @@ import (
 
 	localstorage "qraphQL_posts/pkg/localStorage"
 
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/extension"
+	"github.com/99designs/gqlgen/graphql/handler/lru"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
+	"github.com/vektah/gqlparser/v2/ast"
 	"go.uber.org/zap"
 )
 
 func main() {
+	//Подключение необходимых пакетов
 	ctx := context.Background()
 
 	ctx, _ = logger.NewLogger(ctx)
@@ -40,6 +48,7 @@ func main() {
 
 	localstorage := localstorage.NewLocalStorage()
 
+	//Создание репозитория вида PSG\IN_MEMORY
 	var UserRepo user_service.Repository
 	var PostRepo post_service.Repository
 	var CommentRepo comment_service.Repository
@@ -73,6 +82,27 @@ func main() {
 	PostService := post_service.New(ctx, PostRepo)
 	CommentService := comment_service.New(ctx, CommentRepo, PostService)
 
-	router.NewRouter(ctx, UserService, PostService, CommentService)
+	port := config.PORT
+	if port == "" {
+		port = "8080"
+	}
+	resolver := &graph.Resolver{}
+	resolver = resolver.NewResolver(ctx, UserService, PostService, CommentService)
+	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))
+
+	srv.AddTransport(transport.Options{})
+	srv.AddTransport(transport.GET{})
+	srv.AddTransport(transport.POST{})
+
+	srv.SetQueryCache(lru.New[*ast.QueryDocument](1000))
+
+	srv.Use(extension.Introspection{})
+	srv.Use(extension.AutomaticPersistedQuery{
+		Cache: lru.New[string](100),
+	})
+
+	unitTest.MainTest(ctx, *resolver)
+
+	router.NewRouter(ctx, resolver, port, srv)
 
 }

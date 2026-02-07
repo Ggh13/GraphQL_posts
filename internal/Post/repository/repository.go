@@ -5,20 +5,13 @@ import (
 	"fmt"
 	"qraphQL_posts/api/graph/model"
 	localstorage "qraphQL_posts/pkg/localStorage"
+	"qraphQL_posts/pkg/logger"
 )
 
 type Repository struct {
 	localstorage *localstorage.Storage
 }
 
-/*
-	type Repository interface {
-		Get(ctx context.Context) (bool, error)
-		Create(ctx context.Context, User *model.User) (bool, error)
-		Update(ctx context.Context, User *model.User) (bool, error)
-		Delete(ctx context.Context, User *model.User) (bool, error)
-	}
-*/
 func New(localstorageR *localstorage.Storage) Repository {
 	return Repository{
 		localstorage: localstorageR,
@@ -28,7 +21,8 @@ func New(localstorageR *localstorage.Storage) Repository {
 func (r Repository) Create(ctx context.Context, Post *model.Post) (*model.Post, error) {
 	Post.ID = int32(len(r.localstorage.Posts)) + 1
 	if int(Post.User.ID) > len(r.localstorage.Users) {
-		return nil, fmt.Errorf("User author does not exist")
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostRepository.Create: User author does not exist"))
+		return nil, fmt.Errorf("PostRepository.Create: User author does not exist")
 	}
 	Post.User = &r.localstorage.Users[Post.User.ID-1]
 	r.localstorage.Posts = append(r.localstorage.Posts, *Post)
@@ -39,14 +33,16 @@ func (r Repository) Create(ctx context.Context, Post *model.Post) (*model.Post, 
 func (r Repository) Update(ctx context.Context, Post *model.Post) (bool, error) {
 	idi := Post.ID
 	if idi > int32(len(r.localstorage.Posts)) {
-		return false, fmt.Errorf("The id post does not exist")
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostRepository.Update: The id post does not exist"))
+		return false, fmt.Errorf("PostRepository.Update: The id post does not exist")
 	}
 	r.localstorage.Posts[idi-1].Commentable = *&Post.Commentable
 	return true, nil
 }
 func (r Repository) Get(ctx context.Context, PostId int) (*model.Post, error) {
 	if PostId > len(r.localstorage.Posts) {
-		return nil, fmt.Errorf("User does not exist")
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostRepository.Get: User does not exist"))
+		return nil, fmt.Errorf("PostRepository.Get: User does not exist")
 	}
 	return &r.localstorage.Posts[PostId-1], nil
 }

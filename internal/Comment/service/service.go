@@ -20,7 +20,7 @@ type Repository interface {
 	Create(ctx context.Context, Comment *model.Comment) (*model.Comment, error)
 	Update(ctx context.Context, Comment *model.Comment) (bool, error)
 	Delete(ctx context.Context, CommentId int) (bool, error)
-	GetAllPost(ctx context.Context, PostId int) ([]*model.Comment, error)
+	GetAllCommentOfPost(ctx context.Context, PostId int) ([]*model.Comment, error)
 	GetPostId(ctx context.Context, CommentId int) (int, error)
 }
 
@@ -39,20 +39,29 @@ func (s Service) Create(ctx context.Context, Comment *model.Comment) (*model.Com
 	idiPost := Comment.PostID
 
 	if utf8.RuneCountInString(Comment.Content) > 2000 {
-		return nil, fmt.Errorf("Your comment len %v. Maximum acepted len is 2000", utf8.RuneCountInString(Comment.Content))
+		errorW := fmt.Sprint("CommentService.Create: Your comment len %v. Maximum acepted len is 2000", utf8.RuneCountInString(Comment.Content))
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return nil, fmt.Errorf(errorW)
 	}
 	PostToComment, err := s.postService.Get(ctx, int(idiPost))
 
 	if err != nil {
-		return nil, fmt.Errorf("There are not post with id %v", idiPost)
+		errorW := fmt.Sprint("CommentService.Create: There are not post with id %v", idiPost)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return nil, fmt.Errorf(errorW)
+
 	}
 
 	if !PostToComment.Commentable {
-		return nil, fmt.Errorf("This post does not accept comments")
+		errorW := fmt.Sprint("CommentService.Create: This post does not accept comments")
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return nil, fmt.Errorf(errorW)
 	}
 	fl, err := s.repo.Create(ctx, Comment)
 	if err != nil {
-		return nil, fmt.Errorf("%s", err)
+		errorW := fmt.Sprint("CommentService.Create: %s", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return nil, fmt.Errorf(errorW)
 	}
 
 	return fl, nil
@@ -61,11 +70,15 @@ func (s Service) Create(ctx context.Context, Comment *model.Comment) (*model.Com
 func (s Service) Get(ctx context.Context, CommentID int, limit int, offset int) ([]*model.Comment, error) {
 	postId, err := s.repo.GetPostId(ctx, CommentID)
 	if err != nil {
-		return nil, fmt.Errorf("%s", err)
+		errorW := fmt.Sprint("CommentService.Get: %s", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return nil, fmt.Errorf(errorW)
 	}
-	comments, err := s.repo.GetAllPost(ctx, postId)
+	comments, err := s.repo.GetAllCommentOfPost(ctx, postId)
 	if err != nil {
-		return nil, fmt.Errorf("%s", err)
+		errorW := fmt.Sprint("CommentService.Get: %s", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return nil, fmt.Errorf(errorW)
 	}
 
 	var commentbyId []*model.Comment
@@ -92,18 +105,20 @@ func (s Service) Get(ctx context.Context, CommentID int, limit int, offset int) 
 
 	err = graph.CheckLimit(commentbyId, &limit, &offset)
 	if err != nil {
-		return nil, err
+		errorW := fmt.Sprint("CommentService.Get: %s", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return nil, fmt.Errorf(errorW)
 	}
 	return commentbyId[offset : offset+limit], nil
 }
 
 func (s Service) GetAllPost(ctx context.Context, PostId int, limit int, offset int) ([]*model.Comment, error) {
-	comments, err := s.repo.GetAllPost(ctx, PostId)
+	comments, err := s.repo.GetAllCommentOfPost(ctx, PostId)
 	if err != nil {
-		return nil, fmt.Errorf("%s", err)
+		errorW := fmt.Sprint("GetAllPost: CommentService.Get: %s", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return nil, fmt.Errorf(errorW)
 	}
-
-	logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprintf("there len %v"))
 
 	var preorityComments []*model.Comment
 	for _, j := range comments {
@@ -112,20 +127,16 @@ func (s Service) GetAllPost(ctx context.Context, PostId int, limit int, offset i
 			preorityComments = append(preorityComments, j)
 			var queue []*model.Comment
 			queue = FindKids(int(j.ID), comments)
-			logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprintf("there len Kids %v", len(queue)))
 
 			for len(queue) != 0 {
 				tar := queue[len(queue)-1]
 				queue = queue[:len(queue)-1]
 				preorityComments = append(preorityComments, tar)
 
-				logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprintf("Now watch id %v", tar.ID))
-
 				parentTar := FindKids(int(tar.ID), comments)
 
 				queue = append(queue, parentTar...)
 			}
-			logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprintf("there len preority ID %v", len(preorityComments)))
 
 		}
 
@@ -133,7 +144,9 @@ func (s Service) GetAllPost(ctx context.Context, PostId int, limit int, offset i
 
 	err = graph.CheckLimit(preorityComments, &limit, &offset)
 	if err != nil {
-		return nil, err
+		errorW := fmt.Sprint("CommentService.GetAllPost: %s", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return nil, fmt.Errorf(errorW)
 	}
 
 	return preorityComments[offset : offset+limit], nil
@@ -156,19 +169,3 @@ func FindKids(IdParent int, comments []*model.Comment) []*model.Comment {
 	}
 	return res
 }
-
-/*
-	//Second stage. Start write all comments preority
-
-	//Third stage find Target Comment
-	fl := false
-	var res []*model.Comment
-	for _, j := range preorityComments {
-		if fl {
-			if res[len(res)-1].ID != j.ParentIDComment {
-				return res, nil
-			}
-		}
-	}
-	return comments, nil
-*/

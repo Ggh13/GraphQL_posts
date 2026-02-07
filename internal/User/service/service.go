@@ -4,16 +4,8 @@ import (
 	"context"
 	"fmt"
 	"qraphQL_posts/api/graph/model"
+	"qraphQL_posts/pkg/logger"
 )
-
-/*
-	type UserService interface {
-		Create(ctx context.Context, User *model.User) (bool, error)
-		Update(ctx context.Context, User *model.User) (bool, error)
-		Delete(ctx context.Context, userID int) (bool, error)
-		Get(ctx context.Context, userID int) (User *model.User, error)
-	}
-*/
 
 type Repository interface {
 	Get(ctx context.Context, UserId int) (*model.User, error)
@@ -33,7 +25,8 @@ func New(ctx context.Context, r Repository) Service {
 func (s Service) Create(ctx context.Context, User *model.User) (*model.User, error) {
 	fl, err := s.repo.Create(ctx, User)
 	if err != nil {
-		return fl, fmt.Errorf("%s", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("UserService.Create: %s", err))
+		return fl, fmt.Errorf("UserService.Create: %s", err)
 	}
 	return fl, nil
 }
@@ -50,7 +43,8 @@ func (s Service) Delete(ctx context.Context, userID int) (bool, error) {
 func (s Service) Get(ctx context.Context, userID int) (*model.User, error) {
 	res, err := s.repo.Get(ctx, userID)
 	if err != nil {
-		return nil, fmt.Errorf("%s", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("UserService.Get: %s", err))
+		return nil, fmt.Errorf("UserService.Get: %s", err)
 	}
 	return res, nil
 }

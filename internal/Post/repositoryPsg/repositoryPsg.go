@@ -10,15 +10,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-/*
-CREATE TABLE IF NOT EXISTS posts (
-
-		id SERIAL PRIMARY KEY,
-		content TEXT NOT NULL,
-		author_id INT NOT NULL,
-		commentable BOOLEAN DEFAULT TRUE
-	);
-*/
 const (
 	queryCreatePost = `
         INSERT INTO posts (content, author_id, commentable) 
@@ -68,32 +59,18 @@ type Repository struct {
 	pgDB *pgxpool.Pool
 }
 
-/*
-	type Repository interface {
-		Get(ctx context.Context) (bool, error)
-		Create(ctx context.Context, User *model.User) (bool, error)
-		Update(ctx context.Context, User *model.User) (bool, error)
-		Delete(ctx context.Context, User *model.User) (bool, error)
-	}
-*/
-
 func New(ctx context.Context, pgDB *pgxpool.Pool) *Repository {
 	return &Repository{pgDB: pgDB}
 }
-
 func (r Repository) Create(ctx context.Context, Post *model.Post) (*model.Post, error) {
-	/*
-		Post.ID = int32(len(r.localstorage.Posts))
-		r.localstorage.Posts = append(r.localstorage.Posts, *Post)
-		return Post, nil
-	*/
 	var id_user int
 	id_user = int(Post.User.ID)
 	err := r.pgDB.QueryRow(ctx, queryCheckUser,
 		&id_user,
 	).Scan(&id_user)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create post, user with this id does not exist: %w", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostRepository.Create: failed to create post, user with this id does not exist: %w", err))
+		return nil, fmt.Errorf("PostRepository.Create: failed to create post, user with this id does not exist: %w", err)
 	}
 
 	var id string
@@ -104,11 +81,13 @@ func (r Repository) Create(ctx context.Context, Post *model.Post) (*model.Post, 
 	).Scan(&id)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to create post: %w", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostRepository.Create: failed to create post: %w", err))
+		return nil, fmt.Errorf("PostRepository.Create: failed to create post: %w", err)
 	}
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create post: %w", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostRepository.Create: failed to create post: %w", err))
+		return nil, fmt.Errorf("PostRepository.Create: failed to create post: %w", err)
 	}
 	Post.ID = int32(idInt)
 	return Post, nil
@@ -129,7 +108,8 @@ func (r Repository) Update(ctx context.Context, Post *model.Post) (bool, error) 
 	)
 
 	if err != nil {
-		return false, fmt.Errorf("Cant update post with id %v %w", Post.ID, err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostRepository.Update: Cant update post with id %v %w", Post.ID, err))
+		return false, fmt.Errorf("PostRepository.Update: Cant update post with id %v %w", Post.ID, err)
 	}
 
 	return true, nil
@@ -165,7 +145,8 @@ func (r Repository) Get(ctx context.Context, PostId int) (*model.Post, error) {
 	)
 	post.User = &user
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get post by ID %s %w", PostId, err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostRepository.Get: Failed to get post by ID %s %w", PostId, err))
+		return nil, fmt.Errorf("PostRepository.Get: Failed to get post by ID %s %w", PostId, err)
 	}
 
 	return &post, nil
@@ -192,7 +173,8 @@ func (r Repository) GetAllPosts(ctx context.Context) ([]*model.Post, error) {
 	*/
 	rows, err := r.pgDB.Query(ctx, queryGetAllPosts)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get post %w", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostRepository.GetAllPosts: %s", err))
+		return nil, fmt.Errorf("PostRepository.GetAllPosts: %s", err)
 	}
 	defer rows.Close()
 
@@ -217,7 +199,6 @@ func (r Repository) GetAllPosts(ctx context.Context) ([]*model.Post, error) {
 			return nil, fmt.Errorf("failed to scan posts: %w", err)
 		}
 		post.User = &user
-		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprintf("User to posts %v ", user.Name))
 		posts = append(posts, &post)
 
 	}

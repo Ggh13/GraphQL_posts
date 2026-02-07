@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"qraphQL_posts/api/graph/model"
+	"qraphQL_posts/pkg/logger"
 	"strconv"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -49,11 +50,13 @@ func (r Repository) Create(ctx context.Context, User *model.User) (*model.User, 
 	).Scan(&id)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to create user: %w", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("UserRepository.Create: failed to create user: %w", err))
+		return nil, fmt.Errorf("UserRepository.Create: failed to create user: %w", err)
 	}
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create user: %w", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("UserRepository.Create: failed to create user: %w", err))
+		return nil, fmt.Errorf("UserRepository.Create: failed to create user: %w", err)
 	}
 	User.ID = int32(idInt)
 	return User, nil
@@ -71,7 +74,8 @@ func (r Repository) Get(ctx context.Context, userID int) (*model.User, error) {
 	)
 
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get user by ID %s %w", userID, err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("UserRepository.Create: Failed to get user by ID %s %w", userID, err))
+		return nil, fmt.Errorf("UserRepository.Create: Failed to get user by ID %s %w", userID, err)
 	}
 
 	return &user, nil
