@@ -13,6 +13,7 @@ type Repository struct {
 }
 
 func New(localstorageR *localstorage.Storage) Repository {
+
 	return Repository{
 		localstorage: localstorageR,
 	}
@@ -21,7 +22,7 @@ func New(localstorageR *localstorage.Storage) Repository {
 func (r Repository) Create(ctx context.Context, Post *model.Post) (*model.Post, error) {
 	Post.ID = int32(len(r.localstorage.Posts)) + 1
 	if int(Post.User.ID) > len(r.localstorage.Users) {
-		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostRepository.Create: User author does not exist"))
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprintf("PostRepository.Create: User author does not exist"))
 		return nil, fmt.Errorf("PostRepository.Create: User author does not exist")
 	}
 	Post.User = &r.localstorage.Users[Post.User.ID-1]
@@ -33,12 +34,12 @@ func (r Repository) Create(ctx context.Context, Post *model.Post) (*model.Post, 
 func (r Repository) Update(ctx context.Context, Post *model.Post) (bool, error) {
 	idi := Post.ID
 	if idi > int32(len(r.localstorage.Posts)) {
-		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostRepository.Update: The id post does not exist"))
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprintf("PostRepository.Update: The id post does not exist"))
 		return false, fmt.Errorf("PostRepository.Update: The id post does not exist")
 	}
 
 	if r.localstorage.Posts[idi-1].User.ID != Post.User.ID { // проверка что User является автором поста
-		errorW := fmt.Sprint("PostRepository.Update: You are not author of this post. You can not update it")
+		errorW := fmt.Sprintf("PostRepository.Update: You are not author of this post. You can not update it")
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return false, fmt.Errorf(errorW)
 	}
@@ -47,7 +48,7 @@ func (r Repository) Update(ctx context.Context, Post *model.Post) (bool, error) 
 }
 func (r Repository) Get(ctx context.Context, PostId int) (*model.Post, error) {
 	if PostId > len(r.localstorage.Posts) {
-		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostRepository.Get: User does not exist"))
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprintf("PostRepository.Get: User does not exist"))
 		return nil, fmt.Errorf("PostRepository.Get: User does not exist")
 	}
 	return &r.localstorage.Posts[PostId-1], nil

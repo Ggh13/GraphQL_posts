@@ -25,8 +25,8 @@ func New(ctx context.Context, r Repository) Service {
 func (s Service) Create(ctx context.Context, User *model.User) (*model.User, error) {
 	fl, err := s.repo.Create(ctx, User)
 	if err != nil {
-		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("UserService.Create: %s", err))
-		return fl, fmt.Errorf("UserService.Create: %s", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprintf("UserService.Create: %w", err))
+		return fl, fmt.Errorf("UserService.Create: %w", err)
 	}
 	return fl, nil
 }
@@ -43,8 +43,8 @@ func (s Service) Delete(ctx context.Context, userID int) (bool, error) {
 func (s Service) Get(ctx context.Context, userID int) (*model.User, error) {
 	res, err := s.repo.Get(ctx, userID)
 	if err != nil {
-		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("UserService.Get: %s", err))
-		return nil, fmt.Errorf("UserService.Get: %s", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprintf("UserService.Get: %w", err))
+		return nil, fmt.Errorf("UserService.Get: %w", err)
 	}
 	return res, nil
 }

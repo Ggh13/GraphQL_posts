@@ -22,13 +22,13 @@ func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.
 	Comment.ID = int32(len(r.localstorage.Comments)) + 1
 
 	if int(Comment.User.ID) > len(r.localstorage.Users) { // Проверяем существование юзера
-		errorW := fmt.Sprint("CommentRepository.Create: User author does not exist")
+		errorW := fmt.Sprintf("CommentRepository.Create: User author does not exist")
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 	}
 
 	if int(Comment.PostID) > len(r.localstorage.Posts) { // Проверяем существование поста
-		errorW := fmt.Sprint("CommentRepository.Create: Post with the id does not exist")
+		errorW := fmt.Sprintf("CommentRepository.Create: Post with the id does not exist")
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 	}
@@ -38,13 +38,13 @@ func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.
 		if int(Comment.ParentIDComment) <= len(r.localstorage.Comments) { // Проверяем его существование
 
 			if Comment.PostID != r.localstorage.Comments[Comment.ParentIDComment-1].PostID { //А теперь проверяем что нет ошибки в указании поста куда пишется комментарий
-				errorW := fmt.Sprint("CommentRepository.Create: PostId must be same like parent Comment PostID")
+				errorW := fmt.Sprintf("CommentRepository.Create: PostId must be same like parent Comment PostID")
 				logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 				return nil, fmt.Errorf(errorW)
 			}
 
 		} else {
-			errorW := fmt.Sprint("CommentRepository.Create: Parent Id ( Parent comment ) must be exist")
+			errorW := fmt.Sprintf("CommentRepository.Create: Parent Id ( Parent comment ) must be exist")
 			logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 			return nil, fmt.Errorf(errorW)
 		}
@@ -69,7 +69,7 @@ func (r Repository) Update(ctx context.Context, Comment *model.Comment) (bool, e
 }
 func (r Repository) Get(ctx context.Context, CommentId int) (*model.Comment, error) {
 	if CommentId > len(r.localstorage.Comments) { // Проверяем существование комментария
-		errorW := fmt.Sprint("CommentRepository.Get: User does not exist")
+		errorW := fmt.Sprintf("CommentRepository.Get: User does not exist")
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 	}
@@ -80,7 +80,7 @@ func (r Repository) Delete(ctx context.Context, Post int) (bool, error) {
 }
 func (r Repository) GetAllCommentOfPost(ctx context.Context, PostId int) ([]*model.Comment, error) {
 	if PostId > len(r.localstorage.Posts) || PostId < 0 {
-		errorW := fmt.Sprint("CommentRepository.Get: User does not exist")
+		errorW := fmt.Sprintf("CommentRepository.Get: User does not exist")
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 	}
@@ -99,7 +99,7 @@ func (r Repository) GetPostId(ctx context.Context, CommentId int) (int, error) {
 	if CommentId >= len(r.localstorage.Comments) { //Проверяем существование комментария
 		postId = int(r.localstorage.Comments[CommentId-1].PostID)
 	} else {
-		errorW := fmt.Sprint("Failed to get post by ID comment %s %w", CommentId)
+		errorW := fmt.Sprintf("Failed to get post by ID comment %s %v", CommentId)
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return -1, fmt.Errorf(errorW)
 	}

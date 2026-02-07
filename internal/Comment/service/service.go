@@ -33,27 +33,27 @@ func (s Service) Create(ctx context.Context, Comment *model.Comment) (*model.Com
 	idiPost := Comment.PostID
 
 	if utf8.RuneCountInString(Comment.Content) > 2000 {
-		errorW := fmt.Sprint("CommentService.Create: Your comment len %v. Maximum acepted len is 2000", utf8.RuneCountInString(Comment.Content))
+		errorW := fmt.Sprintf("CommentService.Create: Your comment len %v. Maximum acepted len is 2000", utf8.RuneCountInString(Comment.Content))
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 	}
 
 	PostToComment, err := s.postService.Get(ctx, int(idiPost)) // Проверка существования поста с данным ID
 	if err != nil {
-		errorW := fmt.Sprint("CommentService.Create: There are not post with id %v", idiPost)
+		errorW := fmt.Sprintf("CommentService.Create: There are not post with id %v", idiPost)
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 
 	}
 
 	if !PostToComment.Commentable { // Проверка что данный пост можно комментировать
-		errorW := fmt.Sprint("CommentService.Create: This post does not accept comments")
+		errorW := fmt.Sprintf("CommentService.Create: This post does not accept comments")
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 	}
 	fl, err := s.repo.Create(ctx, Comment)
 	if err != nil {
-		errorW := fmt.Sprint("CommentService.Create: %s", err)
+		errorW := fmt.Sprintf("CommentService.Create: %s", err)
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 	}
@@ -65,13 +65,13 @@ func (s Service) Get(ctx context.Context, CommentID int, limit int, offset int) 
 	//Функция поиска конкретного коментария и всех его дочерних
 	postId, err := s.repo.GetPostId(ctx, CommentID) // Берем id пост чтобы найти ВСЕ его комментарии
 	if err != nil {
-		errorW := fmt.Sprint("CommentService.Get: %s", err)
+		errorW := fmt.Sprintf("CommentService.Get: %s", err)
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 	}
 	comments, err := s.repo.GetAllCommentOfPost(ctx, postId) // Находим все комментарии
 	if err != nil {
-		errorW := fmt.Sprint("CommentService.Get: %s", err)
+		errorW := fmt.Sprintf("CommentService.Get: %s", err)
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 	}
@@ -100,7 +100,7 @@ func (s Service) Get(ctx context.Context, CommentID int, limit int, offset int) 
 
 	err = graph.CheckLimit(commentbyId, &limit, &offset) //Пигинация
 	if err != nil {
-		errorW := fmt.Sprint("CommentService.Get: %s", err)
+		errorW := fmt.Sprintf("CommentService.Get: %s", err)
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 	}
@@ -112,7 +112,7 @@ func (s Service) GetAllPost(ctx context.Context, PostId int, limit int, offset i
 	// Алгоритм не отличается ничем, за исключением одной строчки
 	comments, err := s.repo.GetAllCommentOfPost(ctx, PostId)
 	if err != nil {
-		errorW := fmt.Sprint("GetAllPost: CommentService.Get: %s", err)
+		errorW := fmt.Sprintf("GetAllPost: CommentService.Get: %s", err)
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 	}
@@ -141,7 +141,7 @@ func (s Service) GetAllPost(ctx context.Context, PostId int, limit int, offset i
 
 	err = graph.CheckLimit(preorityComments, &limit, &offset) //Пигинация
 	if err != nil {
-		errorW := fmt.Sprint("CommentService.GetAllPost: %s", err)
+		errorW := fmt.Sprintf("CommentService.GetAllPost: %s", err)
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 	}

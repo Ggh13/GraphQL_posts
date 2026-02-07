@@ -11,8 +11,6 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 )
 
-const defaultPort = "8080"
-
 func NewRouter(ctx context.Context, resolver *graph.Resolver, port string, srv *handler.Server) {
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))

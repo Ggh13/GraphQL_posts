@@ -50,12 +50,12 @@ func (r Repository) Create(ctx context.Context, User *model.User) (*model.User, 
 	).Scan(&id)
 
 	if err != nil {
-		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("UserRepository.Create: failed to create user: %w", err))
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprintf("UserRepository.Create: failed to create user: %w", err))
 		return nil, fmt.Errorf("UserRepository.Create: failed to create user: %w", err)
 	}
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
-		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("UserRepository.Create: failed to create user: %w", err))
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprintf("UserRepository.Create: failed to create user: %w", err))
 		return nil, fmt.Errorf("UserRepository.Create: failed to create user: %w", err)
 	}
 	User.ID = int32(idInt)
@@ -74,7 +74,7 @@ func (r Repository) Get(ctx context.Context, userID int) (*model.User, error) {
 	)
 
 	if err != nil {
-		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("UserRepository.Create: Failed to get user by ID %s %w", userID, err))
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprintf("UserRepository.Create: Failed to get user by ID %s %w", userID, err))
 		return nil, fmt.Errorf("UserRepository.Create: Failed to get user by ID %s %w", userID, err)
 	}
 

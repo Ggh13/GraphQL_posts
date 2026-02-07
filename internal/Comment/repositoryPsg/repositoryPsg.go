@@ -91,7 +91,7 @@ func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.
 		&id_user,
 	).Scan(&id_user)
 	if err != nil {
-		errorW := fmt.Sprint("CommentRepository.Create: failed to create post, user with this id does not exist: %w", err)
+		errorW := fmt.Sprintf("CommentRepository.Create: failed to create post, user with this id does not exist: %v", err)
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 	}
@@ -103,7 +103,7 @@ func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.
 		).Scan(&id_parent)
 
 		if err != nil {
-			errorW := fmt.Sprint("CommentRepository.Create: failed to create comment. Parent comment must exist: %w", err)
+			errorW := fmt.Sprintf("CommentRepository.Create: failed to create comment. Parent comment must exist: %v", err)
 			logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 			return nil, fmt.Errorf(errorW)
 		}
@@ -118,13 +118,13 @@ func (r Repository) Create(ctx context.Context, Comment *model.Comment) (*model.
 	).Scan(&id)
 
 	if err != nil {
-		errorW := fmt.Sprint("CommentRepository.Create: failed to create comment: %w", err)
+		errorW := fmt.Sprintf("CommentRepository.Create: failed to create comment: %v", err)
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 	}
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
-		errorW := fmt.Sprint("CommentRepository.Create: Error in Create comment")
+		errorW := fmt.Sprintf("CommentRepository.Create: Error in Create comment")
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 	}
@@ -140,7 +140,7 @@ func (r Repository) Update(ctx context.Context, Comment *model.Comment) (bool, e
 func (r Repository) Get(ctx context.Context, CommentId int) (*model.Comment, error) {
 	rows, err := r.pgDB.Query(ctx, queryGetComment, CommentId)
 	if err != nil {
-		errorW := fmt.Sprint("CommentRepository.Get: failed to get comments %w", err)
+		errorW := fmt.Sprintf("CommentRepository.Get: failed to get comments %v", err)
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 	}
@@ -163,7 +163,7 @@ func (r Repository) Get(ctx context.Context, CommentId int) (*model.Comment, err
 			&comment.User.Surname,
 		)
 		if err != nil {
-			errorW := fmt.Sprint("CommentRepository.Get: failed to scan comment: %w", err)
+			errorW := fmt.Sprintf("CommentRepository.Get: failed to scan comment: %v", err)
 			logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 			return nil, fmt.Errorf(errorW)
 		}
@@ -187,7 +187,7 @@ func (r Repository) Delete(ctx context.Context, Post int) (bool, error) {
 func (r Repository) GetAllCommentOfPost(ctx context.Context, PostId int) ([]*model.Comment, error) {
 	rows, err := r.pgDB.Query(ctx, queryGetAllCommentOfPost, PostId)
 	if err != nil {
-		errorW := fmt.Sprint("CommentRepository.GetAllCommentOfPost: failed to get comments hierarchy: %w", err)
+		errorW := fmt.Sprintf("CommentRepository.GetAllCommentOfPost: failed to get comments hierarchy: %v", err)
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return nil, fmt.Errorf(errorW)
 	}
@@ -209,7 +209,7 @@ func (r Repository) GetAllCommentOfPost(ctx context.Context, PostId int) ([]*mod
 		comment.User = &user
 		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprintf("There are com %v ", comment.ID))
 		if err != nil {
-			errorW := fmt.Sprint("CommentRepository.GetAllCommentOfPost: failed to scan comment: %w", err)
+			errorW := fmt.Sprintf("CommentRepository.GetAllCommentOfPost: failed to scan comment: %v", err)
 			logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 			return nil, fmt.Errorf(errorW)
 
@@ -229,7 +229,7 @@ func (r Repository) GetPostId(ctx context.Context, CommentId int) (int, error) {
 	)
 
 	if err != nil {
-		errorW := fmt.Sprint("CommentRepository.GetPostId: Failed to get post by ID comment %d %w", CommentId, err)
+		errorW := fmt.Sprintf("CommentRepository.GetPostId: Failed to get post by ID comment %d %v", CommentId, err)
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return -1, fmt.Errorf(errorW)
 	}

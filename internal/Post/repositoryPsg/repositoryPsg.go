@@ -75,8 +75,9 @@ func (r Repository) Create(ctx context.Context, Post *model.Post) (*model.Post, 
 		&id_user,
 	).Scan(&id_user)
 	if err != nil {
-		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostRepository.Create: failed to create post, user with this id does not exist: %w", err))
-		return nil, fmt.Errorf("PostRepository.Create: failed to create post, user with this id does not exist: %w", err)
+		errorW := fmt.Sprintf("PostRepository.Create: failed to create post, user with this id does not exist: %v", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return nil, fmt.Errorf(errorW)
 	}
 
 	var id string
@@ -87,13 +88,15 @@ func (r Repository) Create(ctx context.Context, Post *model.Post) (*model.Post, 
 	).Scan(&id)
 
 	if err != nil {
-		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostRepository.Create: failed to create post: %w", err))
-		return nil, fmt.Errorf("PostRepository.Create: failed to create post: %w", err)
+		errorW := fmt.Sprintf("PostRepository.Create: failed to create post: %v", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return nil, fmt.Errorf(errorW)
 	}
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
-		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostRepository.Create: failed to create post: %w", err))
-		return nil, fmt.Errorf("PostRepository.Create: failed to create post: %w", err)
+		errorW := fmt.Sprintf("PostRepository.Create: failed to create post: %v", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return nil, fmt.Errorf(errorW)
 	}
 	Post.ID = int32(idInt)
 	return Post, nil
@@ -107,13 +110,13 @@ func (r Repository) Update(ctx context.Context, Post *model.Post) (bool, error) 
 	)
 
 	if err != nil {
-		errorW := fmt.Sprint("PostRepository.Update: Failed find post author by ID %d %w", Post.ID, err)
+		errorW := fmt.Sprintf("PostRepository.Update: Failed find post author by ID %d %v", Post.ID, err)
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return false, fmt.Errorf(errorW)
 	}
 
 	if authorId != int(Post.User.ID) { // проверяем является ли user обновляющий данные автором
-		errorW := fmt.Sprint("PostRepository.Update: You are not author of this post. You can not update it")
+		errorW := fmt.Sprintf("PostRepository.Update: You are not author of this post. You can not update it")
 		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
 		return false, fmt.Errorf(errorW)
 	}
@@ -122,8 +125,9 @@ func (r Repository) Update(ctx context.Context, Post *model.Post) (bool, error) 
 	)
 
 	if err != nil {
-		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostRepository.Update: Cant update post with id %v %w", Post.ID, err))
-		return false, fmt.Errorf("PostRepository.Update: Cant update post with id %v %w", Post.ID, err)
+		errorW := fmt.Sprintf("PostRepository.Update: Cant update post with id %v %v", Post.ID, err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return false, fmt.Errorf(errorW)
 	}
 
 	return true, nil
@@ -141,8 +145,9 @@ func (r Repository) Get(ctx context.Context, PostId int) (*model.Post, error) {
 	)
 	post.User = &user
 	if err != nil {
-		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostRepository.Get: Failed to get post by ID %s %w", PostId, err))
-		return nil, fmt.Errorf("PostRepository.Get: Failed to get post by ID %s %w", PostId, err)
+		errorW := fmt.Sprintf("PostRepository.Get: Failed to get post by ID %s %v", PostId, err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return nil, fmt.Errorf(errorW)
 	}
 
 	return &post, nil
@@ -154,8 +159,9 @@ func (r Repository) Delete(ctx context.Context, Post int) (bool, error) {
 func (r Repository) GetAllPosts(ctx context.Context) ([]*model.Post, error) {
 	rows, err := r.pgDB.Query(ctx, queryGetAllPosts)
 	if err != nil {
-		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostRepository.GetAllPosts: %s", err))
-		return nil, fmt.Errorf("PostRepository.GetAllPosts: %s", err)
+		errorW := fmt.Sprintf("PostRepository.GetAllPosts: %v", err)
+		logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+		return nil, fmt.Errorf(errorW)
 	}
 	defer rows.Close()
 
@@ -176,8 +182,9 @@ func (r Repository) GetAllPosts(ctx context.Context) ([]*model.Post, error) {
 			&user.Surname,
 		)
 		if err != nil {
-			logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("PostRepository.GetAllPosts failed to scan posts: %s", err))
-			return nil, fmt.Errorf("PostRepository.GetAllPosts: failed to scan posts: %w", err)
+			errorW := fmt.Sprintf("PostRepository.GetAllPosts: failed to scan posts: %v", err)
+			logger.GetLoggerFromCtx(ctx).Info(ctx, errorW)
+			return nil, fmt.Errorf(errorW)
 		}
 		post.User = &user
 		posts = append(posts, &post)

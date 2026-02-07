@@ -28,7 +28,7 @@ func (r Repository) Update(ctx context.Context, User *model.User) (bool, error) 
 }
 func (r Repository) Get(ctx context.Context, userID int) (*model.User, error) {
 	if userID > len(r.localstorage.Users) {
-		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprint("UserRepository.Create: User does not exist"))
+		logger.GetLoggerFromCtx(ctx).Info(ctx, fmt.Sprintf("UserRepository.Create: User does not exist"))
 		return nil, fmt.Errorf("UserRepository.Create: User does not exist")
 	}
 	return &r.localstorage.Users[userID-1], nil
